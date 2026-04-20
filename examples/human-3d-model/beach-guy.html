@@ -2,32 +2,73 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Modelo 3D – Beach Guy</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #87CEEB; overflow: hidden; font-family: sans-serif; }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: #87CEEB; overflow: hidden; font-family: -apple-system, sans-serif;
+           touch-action: none; }
     #canvas-container { width: 100vw; height: 100vh; }
+
+    /* Info bar – hidden on very small screens */
     #info {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,0.45); color: #eee; padding: 10px 22px;
-      border-radius: 20px; font-size: 13px; pointer-events: none;
+      position: fixed; bottom: max(20px, env(safe-area-inset-bottom));
+      left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.45); color: #eee;
+      padding: 10px 18px; border-radius: 20px;
+      font-size: clamp(11px, 3vw, 13px); pointer-events: none;
+      white-space: nowrap;
     }
+    @media (max-width: 400px) { #info { font-size: 10px; padding: 8px 12px; } }
+
+    /* Controls – bottom row on mobile, right column on desktop */
     #controls {
-      position: fixed; top: 20px; right: 20px;
-      display: flex; flex-direction: column; gap: 8px;
+      position: fixed;
+      display: flex; gap: 10px;
     }
+    @media (max-width: 600px) {
+      #controls {
+        bottom: max(72px, calc(env(safe-area-inset-bottom) + 60px));
+        left: 50%; transform: translateX(-50%);
+        flex-direction: row; justify-content: center;
+      }
+    }
+    @media (min-width: 601px) {
+      #controls { top: 20px; right: 20px; flex-direction: column; }
+    }
+
     .ctrl-btn {
-      background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
-      color: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer;
-      font-size: 13px; transition: background 0.2s; text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.35);
+      color: #fff; border-radius: 12px; cursor: pointer;
+      font-size: clamp(12px, 3.5vw, 14px);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      transition: background 0.2s;
+      /* Large touch targets */
+      padding: clamp(10px, 2.5vw, 10px) clamp(14px, 4vw, 18px);
+      min-height: 44px; min-width: 44px;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-user-select: none; user-select: none;
     }
-    .ctrl-btn:hover { background: rgba(255,255,255,0.35); }
+    .ctrl-btn:hover, .ctrl-btn:active { background: rgba(0,0,0,0.55); }
   </style>
 </head>
 <body>
 <div id="canvas-container"></div>
-<div id="info">Arraste para girar &nbsp;|&nbsp; Scroll para zoom &nbsp;|&nbsp; Botão direito para mover</div>
+<div id="info" id="info-bar">
+  <span class="desktop-hint">Arraste para girar &nbsp;|&nbsp; Scroll para zoom</span>
+  <span class="mobile-hint">1 dedo: girar &nbsp;|&nbsp; 2 dedos: zoom</span>
+</div>
+<style>
+  .desktop-hint { display: none; }
+  .mobile-hint  { display: inline; }
+  @media (hover: hover) and (pointer: fine) {
+    .desktop-hint { display: inline; }
+    .mobile-hint  { display: none; }
+  }
+</style>
 <div id="controls">
   <button class="ctrl-btn" id="btn-reset">Resetar Câmera</button>
   <button class="ctrl-btn" id="btn-wire">Wireframe</button>
@@ -50,9 +91,10 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // ── Renderer ──────────────────────────────────────────────────────────────────
 const container = document.getElementById('canvas-container');
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 600;
+const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: 'high-performance' });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.5 : 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -71,6 +113,7 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.07;
 controls.minDistance = 1.2;
 controls.maxDistance = 12;
+controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
 controls.update();
 
 // ── Lighting ──────────────────────────────────────────────────────────────────
