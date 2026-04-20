@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modelo 3D Humano Interativo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #6e6e6e; overflow: hidden; font-family: sans-serif; }
+    #canvas-container { width: 100vw; height: 100vh; }
+    #info {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.45);
+      color: #eee;
+      padding: 10px 22px;
+      border-radius: 20px;
+      font-size: 13px;
+      pointer-events: none;
+      letter-spacing: 0.03em;
+    }
+    #controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ctrl-btn {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+    .ctrl-btn:hover { background: rgba(255,255,255,0.28); }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div id="info">Arraste para girar &nbsp;|&nbsp; Scroll para zoom &nbsp;|&nbsp; Botão direito para mover</div>
+  <div id="controls">
+    <button class="ctrl-btn" id="btn-reset">Resetar Câmera</button>
+    <button class="ctrl-btn" id="btn-wire">Wireframe</button>
+    <button class="ctrl-btn" id="btn-spin">Auto-Rotação</button>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.163.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.163.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+    // ── Scene ──────────────────────────────────────────────────────────────────
+    const container = document.getElementById('canvas-container');
+    const W = window.innerWidth, H = window.innerHeight;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x6e6e6e);
+    scene.fog = new THREE.Fog(0x6e6e6e, 8, 22);
+
+    const camera = new THREE.PerspectiveCamera(42, W / H, 0.01, 100);
+    camera.position.set(0, 1.0, 4.8);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0.9, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.minDistance = 1.2;
+    controls.maxDistance = 10;
+    controls.update();
+
+    // ── Lighting (mimic clay render) ───────────────────────────────────────────
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+    scene.add(ambientLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.8);
+    keyLight.position.set(3, 6, 4);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(2048, 2048);
+    keyLight.shadow.camera.near = 0.1;
+    keyLight.shadow.camera.far = 20;
+    keyLight.shadow.camera.left = -3;
+    keyLight.shadow.camera.right = 3;
+    keyLight.shadow.camera.top = 4;
+    keyLight.shadow.camera.bottom = -2;
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xd0d8ff, 0.6);
+    fillLight.position.set(-4, 3, 2);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xffeedd, 0.4);
+    rimLight.position.set(0, 2, -5);
+    scene.add(rimLight);
+
+    const groundLight = new THREE.HemisphereLight(0x888888, 0x444444, 0.4);
+    scene.add(groundLight);
+
+    // ── Material ───────────────────────────────────────────────────────────────
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xb8b8b8,
+      roughness: 0.82,
+      metalness: 0.0,
+    });
+
+    // ── Helper: capsule geometry ───────────────────────────────────────────────
+    function cap(rx, ry, rz, height, pos, rot) {
+      const g = new THREE.CapsuleGeometry(1, 1, 8, 16);
+      g.scale(rx, ry / (1 + height), rz);
+      // CapsuleGeometry total height = 2*r + length → we want total = height
+      // Simpler: use CapsuleGeometry(radius, length, cap, radial)
+      return buildPart(rx, ry, rz, height, pos, rot, 'capsule');
+    }
+
+    function buildPart(rx, length, rz, _unused, pos, rot, type) {
+      let g;
+      if (type === 'sphere') {
+        g = new THREE.SphereGeometry(rx, 20, 20);
+        g.scale(1, length / rx, rz / rx);
+      } else {
+        // capsule: CapsuleGeometry(radius, length, capSegs, radialSegs)
+        const capR = Math.min(rx, rz);
+        const bodyLen = Math.max(length - 2 * capR, 0.001);
+        g = new THREE.CapsuleGeometry(capR, bodyLen, 6, 16);
+        const sx = rx / capR;
+        const sz = rz / capR;
+        g.scale(sx, 1, sz);
+      }
+      if (rot) {
+        g.rotateX(rot[0] || 0);
+        g.rotateY(rot[1] || 0);
+        g.rotateZ(rot[2] || 0);
+      }
+      g.translate(pos[0], pos[1], pos[2]);
+      return g;
+    }
+
+    function sphere(rx, ry, rz, pos) {
+      return buildPart(rx, ry, rz, 0, pos, null, 'sphere');
+    }
+
+    // ── Build human body (T-pose) ──────────────────────────────────────────────
+    const parts = [];
+
+    // -- HEAD --
+    // Cranium
+    parts.push(sphere(0.118, 0.13, 0.115, [0, 1.82, 0]));
+    // Face flatten front
+    const faceG = new THREE.SphereGeometry(0.095, 16, 16);
+    faceG.scale(1, 1.05, 0.82);
+    faceG.translate(0, 1.78, 0.035);
+    parts.push(faceG);
+    // Jaw
+    parts.push(sphere(0.085, 0.072, 0.08, [0, 1.695, 0.01]));
+
+    // -- NECK --
+    parts.push(buildPart(0.038, 0.12, 0.038, 0, [0, 1.60, 0.005], null, 'capsule'));
+
+    // -- TORSO --
+    // Chest (wider at top)
+    const chestG = new THREE.CylinderGeometry(0.19, 0.155, 0.28, 20, 1);
+    chestG.translate(0, 1.38, 0);
+    parts.push(chestG);
+    // Chest depth
+    const chestFG = new THREE.CylinderGeometry(0.145, 0.12, 0.28, 20, 1);
+    chestFG.scale(1, 1, 1.22);
+    chestFG.translate(0, 1.38, 0.01);
+    parts.push(chestFG);
+    // Abdomen
+    const abdG = new THREE.CylinderGeometry(0.155, 0.138, 0.22, 20, 1);
+    abdG.scale(1, 1, 1.05);
+    abdG.translate(0, 1.14, 0);
+    parts.push(abdG);
+    // Waist / pelvis
+    const pelvisG = new THREE.CylinderGeometry(0.16, 0.185, 0.20, 20, 1);
+    pelvisG.scale(1, 1, 0.92);
+    pelvisG.translate(0, 0.96, 0);
+    parts.push(pelvisG);
+    // Shoulder caps
+    for (const s of [-1, 1]) {
+      parts.push(sphere(0.075, 0.072, 0.072, [s * 0.235, 1.50, 0]));
+    }
+
+    // -- UPPER ARMS --
+    for (const s of [-1, 1]) {
+      parts.push(buildPart(0.052, 0.30, 0.05, 0,
+        [s * 0.38, 1.38, 0],
+        [0, 0, s * Math.PI / 2], 'capsule'));
+    }
+    // -- ELBOWS --
+    for (const s of [-1, 1]) {
+      parts.push(sphere(0.048, 0.048, 0.045, [s * 0.565, 1.38, 0]));
+    }
+    // -- FOREARMS --
+    for (const s of [-1, 1]) {
+      parts.push(buildPart(0.038, 0.26, 0.037, 0,
+        [s * 0.73, 1.38, 0],
+        [0, 0, s * Math.PI / 2], 'capsule'));
+    }
+    // -- WRISTS --
+    for (const s of [-1, 1]) {
+      parts.push(sphere(0.032, 0.032, 0.028, [s * 0.88, 1.38, 0]));
+    }
+    // -- HANDS --
+    for (const s of [-1, 1]) {
+      // Palm
+      const palmG = new THREE.BoxGeometry(0.07, 0.025, 0.09);
+      palmG.translate(s * 0.945, 1.375, 0.005);
+      parts.push(palmG);
+      // Fingers (4 small capsules)
+      for (let f = 0; f < 4; f++) {
+        const fz = -0.03 + f * 0.02;
+        parts.push(buildPart(0.009, 0.055, 0.009, 0,
+          [s * 0.99, 1.375, fz],
+          [0, 0, s * Math.PI / 2], 'capsule'));
+      }
+      // Thumb
+      parts.push(buildPart(0.011, 0.038, 0.011, 0,
+        [s * 0.945, 1.348, -0.052],
+        [s * 0.4, 0, s * Math.PI / 2 + s * 0.3], 'capsule'));
+    }
+
+    // -- UPPER LEGS --
+    for (const s of [-1, 1]) {
+      parts.push(buildPart(0.085, 0.40, 0.082, 0,
+        [s * 0.115, 0.62, 0],
+        [0, 0, 0], 'capsule'));
+    }
+    // -- KNEES --
+    for (const s of [-1, 1]) {
+      parts.push(sphere(0.068, 0.065, 0.062, [s * 0.115, 0.38, 0.012]));
+    }
+    // -- LOWER LEGS --
+    for (const s of [-1, 1]) {
+      parts.push(buildPart(0.055, 0.35, 0.052, 0,
+        [s * 0.115, 0.14, 0.0],
+        [0, 0, 0], 'capsule'));
+    }
+    // -- ANKLES --
+    for (const s of [-1, 1]) {
+      parts.push(sphere(0.042, 0.038, 0.038, [s * 0.115, -0.05, 0.01]));
+    }
+    // -- FEET --
+    for (const s of [-1, 1]) {
+      const footG = new THREE.BoxGeometry(0.068, 0.042, 0.155);
+      footG.translate(s * 0.115, -0.078, 0.048);
+      parts.push(footG);
+      // Toes rounded
+      parts.push(sphere(0.038, 0.028, 0.032, [s * 0.115, -0.072, 0.118]));
+    }
+
+    // ── Merge & create mesh ────────────────────────────────────────────────────
+    const merged = mergeGeometries(parts, false);
+    merged.computeVertexNormals();
+    const human = new THREE.Mesh(merged, mat);
+    human.castShadow = true;
+    human.receiveShadow = true;
+    scene.add(human);
+
+    // ── Ground shadow plane ────────────────────────────────────────────────────
+    const groundGeo = new THREE.PlaneGeometry(10, 10);
+    const groundMat = new THREE.ShadowMaterial({ opacity: 0.25 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.12;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // ── UI Controls ────────────────────────────────────────────────────────────
+    let wireframe = false;
+    let autoSpin = false;
+
+    document.getElementById('btn-wire').addEventListener('click', () => {
+      wireframe = !wireframe;
+      mat.wireframe = wireframe;
+      document.getElementById('btn-wire').textContent = wireframe ? 'Sólido' : 'Wireframe';
+    });
+
+    document.getElementById('btn-spin').addEventListener('click', () => {
+      autoSpin = !autoSpin;
+      document.getElementById('btn-spin').textContent = autoSpin ? 'Parar Rotação' : 'Auto-Rotação';
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      camera.position.set(0, 1.0, 4.8);
+      controls.target.set(0, 0.9, 0);
+      controls.update();
+    });
+
+    // ── Resize ────────────────────────────────────────────────────────────────
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth, h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+
+    // ── Render loop ───────────────────────────────────────────────────────────
+    function animate() {
+      requestAnimationFrame(animate);
+      if (autoSpin) human.rotation.y += 0.008;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
