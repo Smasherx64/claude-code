@@ -1,2 +1,6 @@
 .DS_Store
 
+fitness_data.db
+__pycache__/
+*.pyc
+fitness-app/fitness_data.db

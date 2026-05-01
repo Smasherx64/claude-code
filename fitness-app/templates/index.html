@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avaliação Física - Pollock 7 Dobras</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="10" r="5" fill="#4f8ef7"/>
+          <rect x="14" y="16" width="12" height="14" rx="3" fill="#4f8ef7"/>
+          <rect x="8" y="17" width="6" height="10" rx="2" fill="#7ab3ff"/>
+          <rect x="26" y="17" width="6" height="10" rx="2" fill="#7ab3ff"/>
+          <rect x="14" y="30" width="5" height="9" rx="2" fill="#4f8ef7"/>
+          <rect x="21" y="30" width="5" height="9" rx="2" fill="#4f8ef7"/>
+        </svg>
+        <span>FitAssess 3D</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" onclick="showView('patients')" id="nav-patients">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Pacientes
+      </button>
+      <button class="nav-btn" onclick="showView('assess')" id="nav-assess">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Avaliação
+      </button>
+      <button class="nav-btn" onclick="showView('evolution')" id="nav-evolution">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Evolução
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-primary btn-sm" onclick="openNewPatient()">+ Novo Paciente</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main id="main-content">
+
+    <!-- === PATIENTS VIEW === -->
+    <div id="view-patients" class="view active">
+      <div class="view-header">
+        <h1>Pacientes</h1>
+        <button class="btn-primary" onclick="openNewPatient()">+ Novo Paciente</button>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="patient-search" placeholder="Buscar paciente..." oninput="filterPatients()">
+      </div>
+      <div id="patients-list" class="patients-grid"></div>
+    </div>
+
+    <!-- === ASSESSMENT VIEW === -->
+    <div id="view-assess" class="view">
+      <div class="view-header">
+        <h1>Avaliação - <span id="assess-patient-name">Selecione um paciente</span></h1>
+      </div>
+      <div class="assess-layout">
+
+        <!-- Left: Form -->
+        <div class="assess-form-panel">
+          <div class="card">
+            <h3>Dados Gerais</h3>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>Peso (kg)</label>
+                <input type="number" id="f-weight" step="0.1" min="30" max="250" placeholder="70.0" oninput="liveCalculate()">
+              </div>
+              <div class="form-group">
+                <label>Altura (cm)</label>
+                <input type="number" id="f-height" step="0.5" min="100" max="220" placeholder="170" oninput="liveCalculate()">
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>7 Dobras Cutâneas (mm) — Pollock</h3>
+            <div class="skinfold-grid">
+              <div class="skinfold-item">
+                <label>Peitoral</label>
+                <input type="number" id="sf-chest" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalculate()">
+                <span class="site-hint">Diagonal entre mamilo e axila</span>
+              </div>
+              <div class="skinfold-item">
+                <label>Axilar Médio</label>
+                <input type="number" id="sf-midaxillary" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalculate()">
+                <span class="site-hint">Linha axilar média, nível costal</span>
+              </div>
+              <div class="skinfold-item">
+                <label>Tríceps</label>
+                <input type="number" id="sf-triceps" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalculate()">
+                <span class="site-hint">Face posterior do braço, meio</span>
+              </div>
+              <div class="skinfold-item">
+                <label>Subescapular</label>
+                <input type="number" id="sf-subscapular" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalculate()">
+                <span class="site-hint">Abaixo da escápula, 45°</span>
+              </div>
+              <div class="skinfold-item">
+                <label>Abdominal</label>
+                <input type="number" id="sf-abdomen" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalculate()">
+                <span class="site-hint">2cm lateral ao umbigo</span>
+              </div>
+              <div class="skinfold-item">
+                <label>Suprailíaca</label>
+                <input type="number" id="sf-suprailiac" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalculate()">
+                <span class="site-hint">Acima da crista ilíaca</span>
+              </div>
+              <div class="skinfold-item">
+                <label>Coxa</label>
+                <input type="number" id="sf-thigh" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalculate()">
+                <span class="site-hint">Face anterior, meio da coxa</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Circunferências (cm)</h3>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label>Pescoço</label>
+                <input type="number" id="m-neck" step="0.5" placeholder="cm" oninput="updateAvatar()">
+              </div>
+              <div class="form-group">
+                <label>Ombros</label>
+                <input type="number" id="m-shoulder" step="0.5" placeholder="cm" oninput="updateAvatar()">
+              </div>
+              <div class="form-group">
+                <label>Tórax</label>
+                <input type="number" id="m-chest" step="0.5" placeholder="cm" oninput="updateAvatar()">
+              </div>
+              <div class="form-group">
+                <label>Cintura</label>
+                <input type="number" id="m-waist" step="0.5" placeholder="cm" oninput="updateAvatar()">
+              </div>
+              <div class="form-group">
+                <label>Abdômen</label>
+                <input type="number" id="m-abdomen" step="0.5" placeholder="cm" oninput="updateAvatar()">
+              </div>
+              <div class="form-group">
+                <label>Quadril</label>
+                <input type="number" id="m-hip" step="0.5" placeholder="cm" oninput="updateAvatar()">
+              </div>
+              <div class="form-group">
+                <label>Coxa D.</label>
+                <input type="number" id="m-thigh" step="0.5" placeholder="cm" oninput="updateAvatar()">
+              </div>
+              <div class="form-group">
+                <label>Panturrilha D.</label>
+                <input type="number" id="m-calf" step="0.5" placeholder="cm" oninput="updateAvatar()">
+              </div>
+              <div class="form-group">
+                <label>Braço D. (relax.)</label>
+                <input type="number" id="m-arm" step="0.5" placeholder="cm" oninput="updateAvatar()">
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Observações</h3>
+            <textarea id="f-notes" rows="3" placeholder="Anotações adicionais..."></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-secondary" onclick="clearForm()">Limpar</button>
+            <button class="btn-primary" onclick="saveAssessment()" id="btn-save-assess">Salvar Avaliação</button>
+          </div>
+        </div>
+
+        <!-- Right: Results + 3D Avatar -->
+        <div class="assess-right-panel">
+          <!-- 3D Avatar -->
+          <div class="card avatar-card">
+            <div class="avatar-header">
+              <h3>Avatar 3D</h3>
+              <div class="avatar-controls">
+                <button onclick="avatarAutoRotate()" title="Auto-rotação" id="btn-rotate">⟳</button>
+                <button onclick="resetAvatarView()" title="Resetar vista">⌂</button>
+              </div>
+            </div>
+            <div id="avatar-container"></div>
+            <div class="avatar-legend">
+              <div class="legend-item"><span class="dot blue"></span>Magro</div>
+              <div class="legend-item"><span class="dot green"></span>Ideal</div>
+              <div class="legend-item"><span class="dot yellow"></span>Acima</div>
+              <div class="legend-item"><span class="dot red"></span>Obeso</div>
+            </div>
+            <div id="avatar-fat-label" class="fat-label">–%</div>
+          </div>
+
+          <!-- Results Panel -->
+          <div class="card results-card" id="results-panel" style="display:none">
+            <h3>Resultados</h3>
+            <div class="results-grid">
+              <div class="result-item highlight">
+                <span class="result-label">% Gordura</span>
+                <span class="result-value" id="r-fat">–</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Classificação</span>
+                <span class="result-value" id="r-class">–</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Soma 7 Dobras</span>
+                <span class="result-value" id="r-sum7">–</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Massa Gorda</span>
+                <span class="result-value" id="r-fat-mass">–</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Massa Magra</span>
+                <span class="result-value" id="r-lean">–</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">IMC</span>
+                <span class="result-value" id="r-bmi">–</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Categ. IMC</span>
+                <span class="result-value" id="r-bmi-cat">–</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Peso Ideal</span>
+                <span class="result-value" id="r-ideal">–</span>
+              </div>
+            </div>
+
+            <!-- Fat % bar -->
+            <div class="fat-bar-container">
+              <div class="fat-bar-track">
+                <div class="fat-bar-fill" id="fat-bar-fill"></div>
+                <div class="fat-bar-marker" id="fat-bar-marker"></div>
+              </div>
+              <div class="fat-bar-labels">
+                <span>3%</span><span>Atlético</span><span>Fit</span><span>Médio</span><span>Obeso</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === EVOLUTION VIEW === -->
+    <div id="view-evolution" class="view">
+      <div class="view-header">
+        <h1>Evolução - <span id="evol-patient-name">Selecione um paciente</span></h1>
+      </div>
+      <div id="evolution-content">
+        <p class="empty-state">Selecione um paciente para ver a evolução.</p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL: New/Edit Patient -->
+<div id="modal-patient" class="modal-overlay" style="display:none" onclick="closePatientModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-patient-title">Novo Paciente</h2>
+      <button onclick="closePatientModal()" class="btn-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mp-id">
+      <div class="form-grid-2">
+        <div class="form-group full-width">
+          <label>Nome *</label>
+          <input type="text" id="mp-name" placeholder="Nome completo">
+        </div>
+        <div class="form-group">
+          <label>Data de Nascimento *</label>
+          <input type="date" id="mp-birth">
+        </div>
+        <div class="form-group">
+          <label>Sexo *</label>
+          <select id="mp-sex">
+            <option value="M">Masculino</option>
+            <option value="F">Feminino</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="mp-email" placeholder="email@exemplo.com">
+        </div>
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="tel" id="mp-phone" placeholder="(00) 00000-0000">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closePatientModal()">Cancelar</button>
+      <button class="btn-primary" onclick="submitPatient()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notifications -->
+<div id="toast" class="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/static/js/avatar.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
