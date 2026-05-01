@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Avaliação Física 3D — Pollock 7 Dobras</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f1117;--bg2:#161923;--bg3:#1e2535;--border:#2a3348;--accent:#4f8ef7;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--text:#e2e8f0;--text2:#8899b4}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+#app{display:flex;height:100vh;overflow:hidden}
+/* SIDEBAR */
+#sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;padding:20px 16px;border-bottom:1px solid var(--border)}
+.logo svg{width:32px;height:32px}
+nav{padding:12px 8px;flex:1;display:flex;flex-direction:column;gap:4px}
+.nb{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:none;border:none;border-radius:8px;color:var(--text2);cursor:pointer;font-size:14px;transition:.15s;text-align:left}
+.nb:hover{background:var(--bg3);color:var(--text)}
+.nb.active{background:rgba(79,142,247,.15);color:var(--accent)}
+.nb svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
+.sf{padding:14px;border-top:1px solid var(--border)}
+/* MAIN */
+#main{flex:1;overflow-y:auto}
+.view{display:none;padding:24px}
+.view.active{display:block}
+.vh{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.vh h1{font-size:21px;font-weight:700}
+/* BUTTONS */
+.bp{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.bp:hover{opacity:.85}
+.bs{background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:14px;cursor:pointer}
+.bs:hover{background:var(--border)}
+.bsm{padding:7px 14px;font-size:13px;width:100%}
+.bx{background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px}
+.bx:hover{color:var(--text);background:var(--bg3)}
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px}
+.card h3{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+/* PATIENTS */
+.pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.pc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:.15s}
+.pc:hover{border-color:var(--accent);transform:translateY(-2px)}
+.pch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.pai{width:42px;height:42px;border-radius:50%;background:rgba(79,142,247,.2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--accent)}
+.pname{font-size:15px;font-weight:600;margin-bottom:4px}
+.pinfo{font-size:12px;color:var(--text2);display:flex;gap:10px;flex-wrap:wrap}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(79,142,247,.15);color:var(--accent);margin-top:6px}
+.sb{display:flex;margin-bottom:16px}
+.sb input{flex:1;max-width:360px;padding:9px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px}
+.sb input:focus{outline:none;border-color:var(--accent)}
+/* ASSESS LAYOUT */
+.al{display:grid;grid-template-columns:1fr 370px;gap:20px;align-items:start}
+.afp{display:flex;flex-direction:column}
+/* FORM */
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:12px;color:var(--text2);font-weight:500}
+.fg input,.fg select,.fg textarea{background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:8px 10px;font-size:14px;transition:.15s;font-family:inherit}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.fw{grid-column:1/-1}
+.sfg{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.sfi{display:flex;flex-direction:column;gap:4px}
+.sfi label{font-size:13px;font-weight:500}
+.sfi input{background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:8px 10px;font-size:14px}
+.sfi input:focus{outline:none;border-color:var(--accent);border-width:2px}
+.hint{font-size:11px;color:var(--text2)}
+.fac{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
+/* RIGHT PANEL */
+.arp{position:sticky;top:24px}
+/* AVATAR */
+.avc{padding:12px}
+.avh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.avh h3{margin-bottom:0}
+.avctrl{display:flex;gap:6px}
+.avctrl button{background:var(--bg);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:16px;transition:.15s}
+.avctrl button:hover,.avctrl button.act{border-color:var(--accent);color:var(--accent)}
+#avatar-container{width:100%;height:310px;border-radius:8px;overflow:hidden;background:var(--bg);cursor:grab}
+#avatar-container:active{cursor:grabbing}
+.avleg{display:flex;gap:10px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)}
+.dot{width:9px;height:9px;border-radius:50%}
+.db{background:#60a5fa}.dg{background:#22c55e}.dy{background:#f59e0b}.dr{background:#ef4444}
+.fatl{text-align:center;font-size:26px;font-weight:800;color:var(--accent);margin-top:4px}
+/* RESULTS */
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
+.ri{display:flex;flex-direction:column;gap:3px;padding:9px 11px;background:var(--bg);border-radius:8px}
+.ri.hl{border:1px solid rgba(79,142,247,.3);background:rgba(79,142,247,.07)}
+.rl{font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase}
+.rv{font-size:16px;font-weight:700}
+.ri.hl .rv{color:var(--accent);font-size:21px}
+.fbt{position:relative;height:11px;border-radius:6px;background:linear-gradient(to right,#60a5fa 0%,#22c55e 20%,#f59e0b 50%,#ef4444 80%);margin-bottom:4px}
+.fbm{position:absolute;top:-4px;width:4px;height:19px;background:#fff;border-radius:2px;transform:translateX(-50%);box-shadow:0 0 5px rgba(0,0,0,.5);transition:left .5s}
+.fbl{display:flex;justify-content:space-between;font-size:10px;color:var(--text2)}
+/* EVOLUTION */
+.eg{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:18px}
+.ec{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.ecd{font-size:11px;color:var(--text2);margin-bottom:6px;font-weight:600}
+.ecv{font-size:23px;font-weight:800;color:var(--accent)}
+.ecl{font-size:12px;color:var(--text2)}
+.edd{font-size:12px;margin-top:4px}
+.edd.good{color:var(--green)}.edd.bad{color:var(--red)}
+.cc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
+.cc h3{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+canvas.ch{width:100%!important;height:190px!important}
+.htable{width:100%;border-collapse:collapse;font-size:13px}
+.htable th,.htable td{padding:9px 11px;text-align:left;border-bottom:1px solid var(--border)}
+.htable th{color:var(--text2);font-size:11px;font-weight:600;text-transform:uppercase}
+.htable tr:last-child td{border-bottom:none}
+.htable tr:hover td{background:var(--bg3)}
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px)}
+.md{background:var(--bg2);border:1px solid var(--border);border-radius:14px;width:90%;max-width:490px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.mdh{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--border)}
+.mdh h2{font-size:17px;font-weight:700}
+.mdb{padding:18px 22px}
+.mdf{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid var(--border)}
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:14px;font-weight:500;transform:translateY(70px);opacity:0;transition:.3s;z-index:2000;box-shadow:0 8px 28px rgba(0,0,0,.4)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:var(--green);color:var(--green)}
+.toast.error{border-color:var(--red);color:var(--red)}
+.toast.info{border-color:var(--accent);color:var(--accent)}
+.empty{color:var(--text2);text-align:center;padding:40px;font-size:15px}
+@media(max-width:880px){.al{grid-template-columns:1fr}.arp{position:static}}
+</style>
+</head>
+<body>
+<div id="app">
+<aside id="sidebar">
+  <div class="logo">
+    <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="10" r="5" fill="#4f8ef7"/><rect x="14" y="16" width="12" height="14" rx="3" fill="#4f8ef7"/><rect x="8" y="17" width="6" height="10" rx="2" fill="#7ab3ff"/><rect x="26" y="17" width="6" height="10" rx="2" fill="#7ab3ff"/><rect x="14" y="30" width="5" height="9" rx="2" fill="#4f8ef7"/><rect x="21" y="30" width="5" height="9" rx="2" fill="#4f8ef7"/></svg>
+    FitAssess 3D
+  </div>
+  <nav>
+    <button class="nb active" onclick="showView('patients')" id="nav-patients">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Pacientes
+    </button>
+    <button class="nb" onclick="showView('assess')" id="nav-assess">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Avaliação
+    </button>
+    <button class="nb" onclick="showView('evolution')" id="nav-evolution">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Evolução
+    </button>
+  </nav>
+  <div class="sf"><button class="bp bsm" onclick="openNewPatient()">+ Novo Paciente</button></div>
+</aside>
+
+<main id="main">
+  <!-- PATIENTS -->
+  <div id="view-patients" class="view active">
+    <div class="vh">
+      <h1>Pacientes</h1>
+      <button class="bp" onclick="openNewPatient()">+ Novo Paciente</button>
+    </div>
+    <div class="sb"><input type="text" id="psearch" placeholder="Buscar paciente..." oninput="filterPatients()"></div>
+    <div id="plist" class="pg"></div>
+  </div>
+
+  <!-- ASSESS -->
+  <div id="view-assess" class="view">
+    <div class="vh"><h1>Avaliação — <span id="aname">Selecione um paciente</span></h1></div>
+    <div class="al">
+      <div class="afp">
+        <div class="card">
+          <h3>Dados Gerais</h3>
+          <div class="g2">
+            <div class="fg"><label>Peso (kg)</label><input type="number" id="fw" step="0.1" min="30" max="250" placeholder="70.0" oninput="liveCalc()"></div>
+            <div class="fg"><label>Altura (cm)</label><input type="number" id="fh" step="0.5" min="100" max="220" placeholder="170" oninput="liveCalc()"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>7 Dobras Cutâneas (mm) — Pollock</h3>
+          <div class="sfg">
+            <div class="sfi"><label>Peitoral</label><input type="number" id="sf-chest" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalc()"><span class="hint">Entre mamilo e axila</span></div>
+            <div class="sfi"><label>Axilar Médio</label><input type="number" id="sf-midaxillary" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalc()"><span class="hint">Linha axilar, nível costal</span></div>
+            <div class="sfi"><label>Tríceps</label><input type="number" id="sf-triceps" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalc()"><span class="hint">Face posterior do braço</span></div>
+            <div class="sfi"><label>Subescapular</label><input type="number" id="sf-subscapular" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalc()"><span class="hint">Abaixo da escápula, 45°</span></div>
+            <div class="sfi"><label>Abdominal</label><input type="number" id="sf-abdomen" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalc()"><span class="hint">2cm lateral ao umbigo</span></div>
+            <div class="sfi"><label>Suprailíaca</label><input type="number" id="sf-suprailiac" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalc()"><span class="hint">Acima da crista ilíaca</span></div>
+            <div class="sfi"><label>Coxa</label><input type="number" id="sf-thigh" min="1" max="80" step="0.5" placeholder="mm" oninput="liveCalc()"><span class="hint">Face anterior, meio da coxa</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Circunferências (cm)</h3>
+          <div class="g3">
+            <div class="fg"><label>Pescoço</label><input type="number" id="m-neck" step="0.5" placeholder="cm" oninput="updAvatar()"></div>
+            <div class="fg"><label>Ombros</label><input type="number" id="m-shoulder" step="0.5" placeholder="cm" oninput="updAvatar()"></div>
+            <div class="fg"><label>Tórax</label><input type="number" id="m-chest" step="0.5" placeholder="cm" oninput="updAvatar()"></div>
+            <div class="fg"><label>Cintura</label><input type="number" id="m-waist" step="0.5" placeholder="cm" oninput="updAvatar()"></div>
+            <div class="fg"><label>Abdômen</label><input type="number" id="m-abdomen" step="0.5" placeholder="cm" oninput="updAvatar()"></div>
+            <div class="fg"><label>Quadril</label><input type="number" id="m-hip" step="0.5" placeholder="cm" oninput="updAvatar()"></div>
+            <div class="fg"><label>Coxa D.</label><input type="number" id="m-thigh" step="0.5" placeholder="cm" oninput="updAvatar()"></div>
+            <div class="fg"><label>Panturrilha D.</label><input type="number" id="m-calf" step="0.5" placeholder="cm" oninput="updAvatar()"></div>
+            <div class="fg"><label>Braço D.</label><input type="number" id="m-arm" step="0.5" placeholder="cm" oninput="updAvatar()"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Observações</h3>
+          <div class="fg"><textarea id="fnotes" rows="3" placeholder="Anotações adicionais..."></textarea></div>
+        </div>
+        <div class="fac">
+          <button class="bs" onclick="clearForm()">Limpar</button>
+          <button class="bp" onclick="saveAssessment()" id="bsave">Salvar Avaliação</button>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="arp">
+        <div class="card avc">
+          <div class="avh">
+            <h3>Avatar 3D</h3>
+            <div class="avctrl">
+              <button onclick="toggleRot()" id="btnrot" title="Auto-rotação">⟳</button>
+              <button onclick="resetView()" title="Resetar">⌂</button>
+            </div>
+          </div>
+          <div id="avatar-container"></div>
+          <div class="avleg">
+            <div class="li"><span class="dot db"></span>Magro</div>
+            <div class="li"><span class="dot dg"></span>Ideal</div>
+            <div class="li"><span class="dot dy"></span>Acima</div>
+            <div class="li"><span class="dot dr"></span>Obeso</div>
+          </div>
+          <div class="fatl" id="fatl">–%</div>
+        </div>
+        <div class="card" id="rp" style="display:none">
+          <h3>Resultados</h3>
+          <div class="rg">
+            <div class="ri hl"><span class="rl">% Gordura</span><span class="rv" id="r-fat">–</span></div>
+            <div class="ri"><span class="rl">Classificação</span><span class="rv" id="r-class">–</span></div>
+            <div class="ri"><span class="rl">Soma 7 Dobras</span><span class="rv" id="r-sum7">–</span></div>
+            <div class="ri"><span class="rl">Massa Gorda</span><span class="rv" id="r-fm">–</span></div>
+            <div class="ri"><span class="rl">Massa Magra</span><span class="rv" id="r-lm">–</span></div>
+            <div class="ri"><span class="rl">IMC</span><span class="rv" id="r-bmi">–</span></div>
+            <div class="ri"><span class="rl">Categ. IMC</span><span class="rv" id="r-bcat">–</span></div>
+            <div class="ri"><span class="rl">Peso Ideal</span><span class="rv" id="r-iw">–</span></div>
+          </div>
+          <div class="fbt"><div class="fbm" id="fbm"></div></div>
+          <div class="fbl"><span>3%</span><span>Atlético</span><span>Fit</span><span>Médio</span><span>Obeso</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVOLUTION -->
+  <div id="view-evolution" class="view">
+    <div class="vh"><h1>Evolução — <span id="ename">Selecione um paciente</span></h1></div>
+    <div id="econtent"><p class="empty">Selecione um paciente para ver a evolução.</p></div>
+  </div>
+</main>
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="mo" style="display:none" onclick="closeMod(event)">
+  <div class="md">
+    <div class="mdh"><h2 id="mtitle">Novo Paciente</h2><button class="bx" onclick="closeMod()">✕</button></div>
+    <div class="mdb">
+      <input type="hidden" id="mp-id">
+      <div class="g2">
+        <div class="fg fw"><label>Nome *</label><input type="text" id="mp-name" placeholder="Nome completo"></div>
+        <div class="fg"><label>Data de Nascimento *</label><input type="date" id="mp-birth"></div>
+        <div class="fg"><label>Sexo *</label><select id="mp-sex"><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+        <div class="fg"><label>E-mail</label><input type="email" id="mp-email" placeholder="email@ex.com"></div>
+        <div class="fg"><label>Telefone</label><input type="tel" id="mp-phone" placeholder="(00) 00000-0000"></div>
+      </div>
+    </div>
+    <div class="mdf"><button class="bs" onclick="closeMod()">Cancelar</button><button class="bp" onclick="submitPatient()">Salvar</button></div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ===================== STORAGE =====================
+const DB = {
+  patients() { return JSON.parse(localStorage.getItem('fp_patients') || '[]') },
+  assessments() { return JSON.parse(localStorage.getItem('fp_assessments') || '[]') },
+  savePatients(d) { localStorage.setItem('fp_patients', JSON.stringify(d)) },
+  saveAssessments(d) { localStorage.setItem('fp_assessments', JSON.stringify(d)) },
+  nextId(arr) { return arr.length ? Math.max(...arr.map(x => x.id)) + 1 : 1 },
+  addPatient(p) { const ps = DB.patients(); p.id = DB.nextId(ps); p.createdAt = new Date().toISOString(); ps.push(p); DB.savePatients(ps); return p },
+  updatePatient(p) { const ps = DB.patients(); const i = ps.findIndex(x => x.id === p.id); if (i >= 0) ps[i] = p; DB.savePatients(ps) },
+  deletePatient(id) { DB.savePatients(DB.patients().filter(p => p.id !== id)); DB.saveAssessments(DB.assessments().filter(a => a.patientId !== id)) },
+  getPatient(id) { return DB.patients().find(p => p.id === id) },
+  patientAssessments(pid) { return DB.assessments().filter(a => a.patientId === pid).sort((a,b) => new Date(b.date) - new Date(a.date)) },
+  addAssessment(a) { const as = DB.assessments(); a.id = DB.nextId(as); a.date = new Date().toISOString(); as.push(a); DB.saveAssessments(as); return a },
+};
+
+// ===================== CALCULATIONS =====================
+function pollock7(sf, age, sex) {
+  const sites = ['chest','midaxillary','triceps','subscapular','abdomen','suprailiac','thigh'];
+  const sum7 = sites.reduce((s, k) => s + (parseFloat(sf[k]) || 0), 0);
+  let bd;
+  if (sex === 'M') bd = 1.112 - 0.00043499*sum7 + 0.00000055*sum7*sum7 - 0.00028826*age;
+  else bd = 1.097 - 0.00046971*sum7 + 0.00000056*sum7*sum7 - 0.00012828*age;
+  let fat = (4.95/bd - 4.50)*100;
+  fat = Math.max(3, Math.min(60, fat));
+  return { fat: +fat.toFixed(1), sum7: +sum7.toFixed(1), bd: +bd.toFixed(4) };
+}
+
+function classify(fat, sex, age) {
+  const male = sex === 'M';
+  const tbl = male
+    ? [[8,13,18,23],[11,16,21,26],[13,18,23,28]]
+    : [[16,20,25,30],[17,22,27,32],[18,23,28,33]];
+  const row = age < 30 ? 0 : age < 40 ? 1 : 2;
+  const t = tbl[row];
+  if (fat < t[0]) return 'Excelente';
+  if (fat < t[1]) return 'Bom';
+  if (fat < t[2]) return 'Médio';
+  if (fat < t[3]) return 'Abaixo do Médio';
+  return 'Muito Acima';
+}
+
+function bmi(w, h) {
+  const b = +(w / (h/100)**2).toFixed(1);
+  let cat;
+  if (b < 18.5) cat = 'Abaixo do Peso';
+  else if (b < 25) cat = 'Normal';
+  else if (b < 30) cat = 'Sobrepeso';
+  else if (b < 35) cat = 'Obesidade I';
+  else if (b < 40) cat = 'Obesidade II';
+  else cat = 'Obesidade III';
+  return { bmi: b, cat };
+}
+
+function calcAge(birth) {
+  if (!birth) return 30;
+  const d = new Date(birth), n = new Date();
+  let a = n.getFullYear() - d.getFullYear();
+  if (n.getMonth() < d.getMonth() || (n.getMonth() === d.getMonth() && n.getDate() < d.getDate())) a--;
+  return a;
+}
+
+// ===================== STATE =====================
+let allPatients = [], curPatient = null, liveTimer = null;
+
+// ===================== VIEWS =====================
+function showView(v) {
+  document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(x => x.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  document.getElementById('nav-' + v).classList.add('active');
+  if (v === 'evolution' && curPatient) loadEvolution(curPatient.id);
+}
+
+// ===================== PATIENTS =====================
+function loadPatients() { allPatients = DB.patients(); renderPatients(allPatients); }
+function filterPatients() { const q = document.getElementById('psearch').value.toLowerCase(); renderPatients(allPatients.filter(p => p.name.toLowerCase().includes(q))); }
+
+function renderPatients(list) {
+  const el = document.getElementById('plist');
+  if (!list.length) { el.innerHTML = '<p class="empty">Nenhum paciente. Clique em "+ Novo Paciente".</p>'; return; }
+  el.innerHTML = list.map(p => {
+    const age = p.birthDate ? calcAge(p.birthDate) : '–';
+    const init = p.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const cnt = DB.patientAssessments(p.id).length;
+    return `<div class="pc" onclick="selectPatient(${p.id})">
+      <div class="pch">
+        <div class="pai">${init}</div>
+        <div style="display:flex;gap:4px">
+          <button class="bx" onclick="editPatient(event,${p.id})" title="Editar">✏️</button>
+          <button class="bx" onclick="delPatient(event,${p.id})" title="Excluir" style="color:var(--red)">🗑️</button>
+        </div>
+      </div>
+      <div class="pname">${p.name}</div>
+      <div class="pinfo"><span>${p.sex==='M'?'♂ Masculino':'♀ Feminino'}</span>${age!=='–'?`<span>${age} anos</span>`:''}</div>
+      ${cnt>0?`<div class="tag">${cnt} avaliação${cnt!==1?'ões':''}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function selectPatient(id) {
+  curPatient = DB.getPatient(id);
+  document.getElementById('aname').textContent = curPatient.name;
+  document.getElementById('ename').textContent = curPatient.name;
+  showView('assess');
+  clearForm();
+  const as = DB.patientAssessments(id);
+  if (as.length) { populateForm(as[0]); showResults(as[0].results, as[0].weight, as[0].height, curPatient.sex, as[0].measurements); }
+}
+
+// ===================== MODAL =====================
+function openNewPatient() {
+  document.getElementById('mp-id').value=''; document.getElementById('mp-name').value='';
+  document.getElementById('mp-birth').value=''; document.getElementById('mp-sex').value='M';
+  document.getElementById('mp-email').value=''; document.getElementById('mp-phone').value='';
+  document.getElementById('mtitle').textContent='Novo Paciente';
+  document.getElementById('modal').style.display='flex';
+  setTimeout(()=>document.getElementById('mp-name').focus(),50);
+}
+function editPatient(e, id) {
+  e.stopPropagation();
+  const p = DB.getPatient(id);
+  document.getElementById('mp-id').value=p.id; document.getElementById('mp-name').value=p.name;
+  document.getElementById('mp-birth').value=p.birthDate||''; document.getElementById('mp-sex').value=p.sex;
+  document.getElementById('mp-email').value=p.email||''; document.getElementById('mp-phone').value=p.phone||'';
+  document.getElementById('mtitle').textContent='Editar Paciente';
+  document.getElementById('modal').style.display='flex';
+}
+function closeMod(e) { if(e&&e.target!==document.getElementById('modal'))return; document.getElementById('modal').style.display='none'; }
+function submitPatient() {
+  const name=document.getElementById('mp-name').value.trim(), birth=document.getElementById('mp-birth').value;
+  if(!name){toast('Nome é obrigatório','error');return;}
+  if(!birth){toast('Data de nascimento obrigatória','error');return;}
+  const data={name,birthDate:birth,sex:document.getElementById('mp-sex').value,email:document.getElementById('mp-email').value,phone:document.getElementById('mp-phone').value};
+  const id=document.getElementById('mp-id').value;
+  if(id){data.id=+id;DB.updatePatient(data);}else{DB.addPatient(data);}
+  document.getElementById('modal').style.display='none';
+  toast('Paciente salvo!','success'); loadPatients();
+}
+function delPatient(e,id) { e.stopPropagation(); if(!confirm('Excluir este paciente e todas as avaliações?'))return; DB.deletePatient(id); if(curPatient&&curPatient.id===id)curPatient=null; toast('Excluído','info'); loadPatients(); }
+
+// ===================== FORM =====================
+function clearForm() {
+  ['fw','fh','sf-chest','sf-midaxillary','sf-triceps','sf-subscapular','sf-abdomen','sf-suprailiac','sf-thigh',
+   'm-neck','m-shoulder','m-chest','m-waist','m-abdomen','m-hip','m-thigh','m-calf','m-arm','fnotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('rp').style.display='none';
+  Avatar.updateShape({fat:15,sex:curPatient?curPatient.sex:'M',weight:70,height:170});
+}
+
+function populateForm(a) {
+  if(a.weight)document.getElementById('fw').value=a.weight;
+  if(a.height)document.getElementById('fh').value=a.height;
+  const sfMap={chest:'sf-chest',midaxillary:'sf-midaxillary',triceps:'sf-triceps',subscapular:'sf-subscapular',abdomen:'sf-abdomen',suprailiac:'sf-suprailiac',thigh:'sf-thigh'};
+  if(a.skinfolds)Object.entries(sfMap).forEach(([k,id])=>{if(a.skinfolds[k])document.getElementById(id).value=a.skinfolds[k];});
+  const mMap={neck:'m-neck',shoulder:'m-shoulder',chest:'m-chest',waist:'m-waist',abdomen:'m-abdomen',hip:'m-hip',thigh:'m-thigh',calf:'m-calf',arm:'m-arm'};
+  if(a.measurements)Object.entries(mMap).forEach(([k,id])=>{if(a.measurements[k])document.getElementById(id).value=a.measurements[k];});
+  if(a.notes)document.getElementById('fnotes').value=a.notes;
+}
+
+function getForm() {
+  return {
+    weight: parseFloat(document.getElementById('fw').value)||null,
+    height: parseFloat(document.getElementById('fh').value)||null,
+    skinfolds: {chest:+document.getElementById('sf-chest').value||0,midaxillary:+document.getElementById('sf-midaxillary').value||0,triceps:+document.getElementById('sf-triceps').value||0,subscapular:+document.getElementById('sf-subscapular').value||0,abdomen:+document.getElementById('sf-abdomen').value||0,suprailiac:+document.getElementById('sf-suprailiac').value||0,thigh:+document.getElementById('sf-thigh').value||0},
+    measurements: {neck:+document.getElementById('m-neck').value||0,shoulder:+document.getElementById('m-shoulder').value||0,chest:+document.getElementById('m-chest').value||0,waist:+document.getElementById('m-waist').value||0,abdomen:+document.getElementById('m-abdomen').value||0,hip:+document.getElementById('m-hip').value||0,thigh:+document.getElementById('m-thigh').value||0,calf:+document.getElementById('m-calf').value||0,arm:+document.getElementById('m-arm').value||0},
+    notes: document.getElementById('fnotes').value,
+  };
+}
+
+function liveCalc() {
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(()=>{
+    const fd=getForm(), sf=fd.skinfolds;
+    updAvatar();
+    if(Object.values(sf).filter(v=>v>0).length<7)return;
+    if(!curPatient)return;
+    const age=calcAge(curPatient.birthDate), sex=curPatient.sex;
+    const p=pollock7(sf,age,sex);
+    const bmiData=fd.weight&&fd.height?bmi(fd.weight,fd.height):{};
+    const h=fd.height||170;
+    const ideal={min:+(18.5*(h/100)**2).toFixed(1),max:+(24.9*(h/100)**2).toFixed(1)};
+    const results={...p,...bmiData,ideal,fatMass:fd.weight?+(fd.weight*p.fat/100).toFixed(1):null,leanMass:fd.weight?+(fd.weight*(1-p.fat/100)).toFixed(1):null,class:classify(p.fat,sex,age)};
+    showResults(results,fd.weight,fd.height,sex,fd.measurements);
+  },350);
+}
+
+function updAvatar() {
+  const fd=getForm(), m=fd.measurements, sex=curPatient?curPatient.sex:'M';
+  Avatar.updateShape({fat:15,sex,weight:fd.weight||70,height:fd.height||170,waist:m.waist,chest:m.chest,hip:m.hip,thigh:m.thigh,arm:m.arm,calf:m.calf,shoulder:m.shoulder});
+}
+
+function showResults(r,weight,height,sex,measurements) {
+  document.getElementById('rp').style.display='block';
+  document.getElementById('r-fat').textContent=(r.fat||0).toFixed(1)+'%';
+  document.getElementById('r-class').textContent=r.class||r.classification||'–';
+  document.getElementById('r-sum7').textContent=(r.sum7||0)+' mm';
+  document.getElementById('r-fm').textContent=r.fatMass?r.fatMass+' kg':'–';
+  document.getElementById('r-lm').textContent=r.leanMass?r.leanMass+' kg':'–';
+  document.getElementById('r-bmi').textContent=r.bmi||'–';
+  document.getElementById('r-bcat').textContent=r.cat||r.category||'–';
+  const iw=r.ideal||r.idealWeight;
+  document.getElementById('r-iw').textContent=iw?`${iw.min}–${iw.max} kg`:'–';
+  const fat=r.fat||0;
+  document.getElementById('fbm').style.left=Math.max(0,Math.min(100,(fat-3)/42*100))+'%';
+  document.getElementById('fatl').textContent=fat.toFixed(1)+'%';
+  const m=measurements||{};
+  Avatar.updateShape({fat,sex:sex||'M',weight:weight||70,height:height||170,waist:m.waist||0,chest:m.chest||0,hip:m.hip||0,thigh:m.thigh||0,arm:m.arm||0,calf:m.calf||0,shoulder:m.shoulder||0});
+}
+
+function saveAssessment() {
+  if(!curPatient){toast('Selecione um paciente','error');return;}
+  const fd=getForm();
+  if(Object.values(fd.skinfolds).filter(v=>v>0).length<7){toast('Preencha as 7 dobras','error');return;}
+  if(!fd.weight||!fd.height){toast('Preencha peso e altura','error');return;}
+  const age=calcAge(curPatient.birthDate), sex=curPatient.sex;
+  const p=pollock7(fd.skinfolds,age,sex);
+  const bmiData=bmi(fd.weight,fd.height);
+  const h=fd.height;
+  const ideal={min:+(18.5*(h/100)**2).toFixed(1),max:+(24.9*(h/100)**2).toFixed(1)};
+  const results={...p,...bmiData,ideal,fatMass:+(fd.weight*p.fat/100).toFixed(1),leanMass:+(fd.weight*(1-p.fat/100)).toFixed(1),class:classify(p.fat,sex,age)};
+  DB.addAssessment({patientId:curPatient.id,weight:fd.weight,height:fd.height,skinfolds:fd.skinfolds,measurements:fd.measurements,notes:fd.notes,results});
+  showResults(results,fd.weight,fd.height,sex,fd.measurements);
+  toast('Avaliação salva!','success'); loadPatients();
+}
+
+// ===================== EVOLUTION =====================
+function loadEvolution(pid) {
+  const as=DB.patientAssessments(pid).slice().reverse();
+  const el=document.getElementById('econtent');
+  if(!as.length){el.innerHTML='<p class="empty">Nenhuma avaliação ainda.</p>';return;}
+  const last=as[as.length-1], first=as[0];
+  const dFat=as.length>1?+(last.results.fat-first.results.fat).toFixed(1):null;
+  const dW=as.length>1?+(last.weight-first.weight).toFixed(1):null;
+  el.innerHTML=`
+    <div class="eg">
+      <div class="ec"><div class="ecd">Última · ${last.date.slice(0,10)}</div><div class="ecv">${last.results.fat}%</div><div class="ecl">% Gordura</div>${dFat!==null?`<div class="edd ${dFat<0?'good':'bad'}">${dFat>0?'+':''}${dFat}% desde início</div>`:''}</div>
+      <div class="ec"><div class="ecd">Última · ${last.date.slice(0,10)}</div><div class="ecv">${last.weight} kg</div><div class="ecl">Peso</div>${dW!==null?`<div class="edd ${dW<0?'good':'bad'}">${dW>0?'+':''}${dW} kg desde início</div>`:''}</div>
+      <div class="ec"><div class="ecd">Última · ${last.date.slice(0,10)}</div><div class="ecv">${last.results.sum7} mm</div><div class="ecl">Soma 7 Dobras</div></div>
+      <div class="ec"><div class="ecd">Total</div><div class="ecv">${as.length}</div><div class="ecl">Avaliações</div></div>
+    </div>
+    <div class="cc"><h3>% Gordura ao Longo do Tempo</h3><canvas id="ch-fat" class="ch"></canvas></div>
+    <div class="cc"><h3>Peso (kg)</h3><canvas id="ch-w" class="ch"></canvas></div>
+    <div style="margin-top:6px"><h3 style="font-size:15px;font-weight:600;margin-bottom:10px">Histórico</h3>
+    <table class="htable"><thead><tr><th>Data</th><th>Peso</th><th>% Gordura</th><th>Σ7</th><th>IMC</th></tr></thead><tbody>
+      ${as.slice().reverse().map(a=>`<tr><td>${a.date.slice(0,10)}</td><td>${a.weight} kg</td><td>${a.results.fat}%</td><td>${a.results.sum7} mm</td><td>${a.results.bmi||'–'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  drawChart('ch-fat',as.map(a=>({x:a.date.slice(0,10),y:a.results.fat})),'%','#4f8ef7');
+  drawChart('ch-w',as.map(a=>({x:a.date.slice(0,10),y:a.weight})),'kg','#22c55e');
+}
+
+function drawChart(id,data,unit,color) {
+  const c=document.getElementById(id); if(!c||data.length<1)return;
+  const ctx=c.getContext('2d'); const W=c.offsetWidth,H=c.offsetHeight;
+  c.width=W*devicePixelRatio; c.height=H*devicePixelRatio; ctx.scale(devicePixelRatio,devicePixelRatio);
+  const pad={t:16,r:20,b:28,l:44};
+  const vals=data.map(d=>d.y).filter(v=>v!=null);
+  if(!vals.length)return;
+  const minV=Math.min(...vals)*.95, maxV=Math.max(...vals)*1.05;
+  const xStep=data.length>1?(W-pad.l-pad.r)/(data.length-1):0;
+  const px=i=>pad.l+i*xStep, py=v=>pad.t+(maxV-v)/(maxV-minV)*(H-pad.t-pad.b);
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#2a3348'; ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const y=pad.t+i*(H-pad.t-pad.b)/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();const v=maxV-i*(maxV-minV)/4;ctx.fillStyle='#8899b4';ctx.font='11px sans-serif';ctx.textAlign='right';ctx.fillText(v.toFixed(1)+unit,pad.l-3,y+4);}
+  if(data.length>1){const g=ctx.createLinearGradient(0,pad.t,0,H-pad.b);g.addColorStop(0,color+'44');g.addColorStop(1,color+'00');ctx.beginPath();data.forEach((d,i)=>{if(d.y!=null){i===0?ctx.moveTo(px(i),py(d.y)):ctx.lineTo(px(i),py(d.y));}});ctx.lineTo(px(data.length-1),H-pad.b);ctx.lineTo(pad.l,H-pad.b);ctx.closePath();ctx.fillStyle=g;ctx.fill();}
+  if(data.length>1){ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin='round';data.forEach((d,i)=>{if(d.y!=null){i===0?ctx.moveTo(px(i),py(d.y)):ctx.lineTo(px(i),py(d.y));}});ctx.stroke();}
+  data.forEach((d,i)=>{if(d.y==null)return;ctx.beginPath();ctx.arc(px(i),py(d.y),4,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#0f1117';ctx.lineWidth=2;ctx.stroke();});
+  ctx.fillStyle='#8899b4';ctx.font='10px sans-serif';ctx.textAlign='center';
+  data.forEach((d,i)=>{if(i%Math.ceil(data.length/6)===0||i===data.length-1)ctx.fillText(d.x.slice(5),px(i),H-4);});
+}
+
+// ===================== TOAST =====================
+let toastT;
+function toast(msg,type='info'){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),3000);}
+
+// ===================== 3D AVATAR =====================
+const Avatar = (() => {
+  let scene,camera,renderer,group,anim;
+  let rot=false,drag=false,prev={x:0,y:0},rx=0,ry=0;
+  let parts={};
+
+  function init(cid) {
+    const c=document.getElementById(cid); if(!c)return;
+    const W=c.clientWidth,H=c.clientHeight;
+    scene=new THREE.Scene(); scene.background=new THREE.Color(0x0f1117); scene.fog=new THREE.Fog(0x0f1117,8,18);
+    camera=new THREE.PerspectiveCamera(45,W/H,0.1,100); camera.position.set(0,1.2,4.5); camera.lookAt(0,1,0);
+    renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setSize(W,H); renderer.shadowMap.enabled=true; c.appendChild(renderer.domElement);
+    scene.add(new THREE.AmbientLight(0x8899cc,0.6));
+    const dl=new THREE.DirectionalLight(0xffffff,0.9); dl.position.set(2,5,3); dl.castShadow=true; scene.add(dl);
+    const fl=new THREE.DirectionalLight(0x4f8ef7,0.3); fl.position.set(-3,2,-1); scene.add(fl);
+    const grid=new THREE.GridHelper(3,6,0x2a3348,0x2a3348); scene.add(grid);
+    group=new THREE.Group(); scene.add(group);
+    buildBody();
+    c.addEventListener('mousedown',e=>{drag=true;prev={x:e.clientX,y:e.clientY};});
+    window.addEventListener('mouseup',()=>drag=false);
+    window.addEventListener('mousemove',e=>{if(!drag)return;ry+=(e.clientX-prev.x)*.008;rx+=(e.clientY-prev.y)*.005;rx=Math.max(-.5,Math.min(.8,rx));prev={x:e.clientX,y:e.clientY};if(group){group.rotation.y=ry;group.rotation.x=rx;}});
+    c.addEventListener('wheel',e=>{camera.position.z=Math.max(2.5,Math.min(8,camera.position.z+e.deltaY*.005));},{passive:true});
+    window.addEventListener('resize',()=>{if(!renderer)return;const el=renderer.domElement.parentElement;if(!el)return;camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix();renderer.setSize(el.clientWidth,el.clientHeight);});
+    (function animate(){anim=requestAnimationFrame(animate);if(rot&&group)group.rotation.y+=.008;renderer.render(scene,camera);})();
+  }
+
+  function buildBody() {
+    while(group.children.length)group.remove(group.children[0]);
+    parts={};
+    const mat=new THREE.MeshStandardMaterial({color:0xc8a882,roughness:.7});
+    const add=(geo,x,y,z)=>{const m=new THREE.Mesh(geo,mat.clone());m.position.set(x,y,z);m.castShadow=true;group.add(m);return m;};
+    parts.head=add(new THREE.SphereGeometry(.18,16,12),0,2.28,0);
+    parts.neck=add(new THREE.CylinderGeometry(.08,.10,.14,10),0,2.04,0);
+    parts.chest=add(new THREE.CylinderGeometry(.26,.20,.55,12),0,1.62,0);
+    parts.abd=add(new THREE.CylinderGeometry(.20,.22,.45,12),0,1.17,0);
+    parts.hip=add(new THREE.CylinderGeometry(.24,.20,.22,12),0,.87,0);
+    parts.sL=add(new THREE.SphereGeometry(.11,10,8),-.30,1.82,0);
+    parts.sR=add(new THREE.SphereGeometry(.11,10,8),.30,1.82,0);
+    parts.aUL=add(new THREE.CylinderGeometry(.075,.065,.38,10),-.38,1.62,0); parts.aUL.rotation.z=Math.PI/12;
+    parts.aUR=add(new THREE.CylinderGeometry(.075,.065,.38,10),.38,1.62,0); parts.aUR.rotation.z=-Math.PI/12;
+    parts.aLL=add(new THREE.CylinderGeometry(.058,.048,.34,10),-.45,1.27,0); parts.aLL.rotation.z=Math.PI/14;
+    parts.aLR=add(new THREE.CylinderGeometry(.058,.048,.34,10),.45,1.27,0); parts.aLR.rotation.z=-Math.PI/14;
+    parts.hL=add(new THREE.SphereGeometry(.052,8,8),-.52,1.05,0);
+    parts.hR=add(new THREE.SphereGeometry(.052,8,8),.52,1.05,0);
+    parts.tL=add(new THREE.CylinderGeometry(.115,.10,.46,12),-.14,.50,0);
+    parts.tR=add(new THREE.CylinderGeometry(.115,.10,.46,12),.14,.50,0);
+    parts.cL=add(new THREE.CylinderGeometry(.085,.065,.42,12),-.14,.06,0);
+    parts.cR=add(new THREE.CylinderGeometry(.085,.065,.42,12),.14,.06,0);
+    parts.fL=add(new THREE.BoxGeometry(.10,.06,.18),-.14,-.16,.04);
+    parts.fR=add(new THREE.BoxGeometry(.10,.06,.18),.14,-.16,.04);
+    group.position.set(0,.16,0);
+  }
+
+  function updateShape({fat=15,sex='M',weight=70,height=170,waist=0,chest=0,hip=0,thigh=0,arm=0,calf=0,shoulder=0}={}) {
+    if(!group)return;
+    const baseMin=sex==='F'?14:6, baseMax=sex==='F'?45:40;
+    const ff=Math.max(0,Math.min(1,(fat-baseMin)/(baseMax-baseMin)));
+    const hs=Math.max(.85,Math.min(1.2,height/170));
+    const col=fat<(sex==='M'?8:16)?0x60a5fa:fat<(sex==='M'?15:23)?0x4ade80:fat<(sex==='M'?22:30)?0xfbbf24:0xf87171;
+    Object.values(parts).forEach(p=>{if(p.material)p.material.color.setHex(col);});
+    const cR=chest>0?chest/2/100:.26+ff*.10;
+    const wR=waist>0?waist/2/100:.20+ff*.18;
+    const hR=hip>0?hip/2/100:.24+ff*.14;
+    const tR=thigh>0?thigh/2/100:.115+ff*.10;
+    const aR=arm>0?arm/2/100:.075+ff*.07;
+    const caR=calf>0?calf/2/100:.085+ff*.06;
+    const shR=shoulder>0?shoulder/2/100:.30+ff*.05;
+    if(parts.chest)parts.chest.scale.set(cR/.26,hs,cR/.26);
+    if(parts.abd)parts.abd.scale.set(Math.max(cR,wR)/.20,hs,Math.max(cR,wR)/.20);
+    if(parts.hip)parts.hip.scale.set(hR/.24,hs,hR/.24);
+    [parts.tL,parts.tR].forEach(p=>{if(p)p.scale.set(tR/.115,hs,tR/.115);});
+    [parts.cL,parts.cR].forEach(p=>{if(p)p.scale.set(caR/.085,hs,caR/.085);});
+    [parts.aUL,parts.aUR].forEach(p=>{if(p)p.scale.set(aR/.075,hs,aR/.075);});
+    [parts.aLL,parts.aLR].forEach(p=>{if(p)p.scale.set(aR/.065*.85,hs,aR/.065*.85);});
+    [parts.sL,parts.sR].forEach(p=>{if(p)p.scale.set(shR/.30,shR/.30,shR/.30);});
+    [parts.head,parts.neck,parts.hL,parts.hR,parts.fL,parts.fR].forEach(p=>{if(p)p.scale.setScalar(hs);});
+  }
+
+  function toggleRot(){rot=!rot;return rot;}
+  function resetView(){rx=0;ry=0;if(group){group.rotation.x=0;group.rotation.y=0;}camera.position.set(0,1.2,4.5);}
+
+  return{init,updateShape,toggleRot,resetView};
+})();
+
+function toggleRot(){const a=Avatar.toggleRot();document.getElementById('btnrot').classList.toggle('act',a);}
+function resetView(){Avatar.resetView();}
+
+// ===================== INIT =====================
+document.addEventListener('DOMContentLoaded',()=>{
+  Avatar.init('avatar-container');
+  loadPatients();
+  Avatar.updateShape({fat:15,sex:'M',weight:70,height:170});
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('modal').style.display='none';});
+</script>
+</body>
+</html>
