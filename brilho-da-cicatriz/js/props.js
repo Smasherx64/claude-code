@@ -3,66 +3,47 @@
    props.js — adereços e "closes": olhos, boletos, geladeira, mão, bokeh…
    ============================================================ */
 
-/* ---------- olhos em close (extreme close-up) ---------- */
-function oneEye(ctx, ex, ey, S, side, o) {
-  const open = o.open, a = .33 * S, hMax = .3 * S, inner = ex - side * a, outer = ex + side * a, oy = ey - .035 * S;
-  const uy = ey + lerp(.12 * S, -hMax * 1.55, open), ly = ey + lerp(.12 * S, hMax * .8, open);
-  const path = () => { ctx.beginPath(); ctx.moveTo(inner, ey); ctx.bezierCurveTo(inner + (outer - inner) * .18, uy, inner + (outer - inner) * .82, uy - .02 * S, outer, oy); ctx.bezierCurveTo(inner + (outer - inner) * .8, ly, inner + (outer - inner) * .2, ly, inner, ey); ctx.closePath(); };
-  if (open > .04) {
-    ctx.save(); path(); ctx.clip();
-    ctx.fillStyle = lg(ctx, 0, ey - hMax, 0, ey + hMax, [[0, '#d9d4d0'], [.35, '#fffdfb'], [1, '#f1e6e0']]); ctx.fillRect(ex - a * 1.2, ey - hMax * 2, a * 2.4, hMax * 4);
-    const lk = o.look || [0, 0], ix = ex + lk[0] * .075 * S - side * .015 * S, iy = ey + lk[1] * .06 * S + .02 * S, ir = (o.iris || .2) * S, pu = o.pupil == null ? .42 : o.pupil;
-    ctx.fillStyle = rg(ctx, ix, iy + ir * .25, ir * .1, ir, [[0, o.irisIn || '#ffcf6b'], [.45, o.irisMid || '#c47a2c'], [1, o.irisOut || '#4a2410']]);
-    ctx.beginPath(); ctx.arc(ix, iy, ir, 0, TAU); ctx.fill();
-    ctx.strokeStyle = 'rgba(30,12,8,.8)'; ctx.lineWidth = ir * .13; ctx.stroke();
-    ctx.fillStyle = '#12080a'; ctx.beginPath(); ctx.arc(ix, iy, ir * pu, 0, TAU); ctx.fill();
-    if (o.starIris) { // estrelas refletidas na íris (final)
-      ctx.globalCompositeOperation = 'lighter'; const r2 = rng(5);
-      for (let i = 0; i < 14; i++) { const aa = r2() * TAU, dd = r2() * ir * .8; sparkle(ctx, ix + Math.cos(aa) * dd, iy + Math.sin(aa) * dd, ir * (.06 + r2() * .1) * (.6 + .4 * Math.sin(o.t * 6 + i)), 0, 'rgba(255,240,200,.95)'); }
-      ctx.globalCompositeOperation = 'source-over';
-    }
-    if (o.glowIris) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rg(ctx, ix, iy, 0, ir, [[0, `rgba(255,210,110,${o.glowIris})`], [1, 'rgba(255,210,110,0)']]); ctx.beginPath(); ctx.arc(ix, iy, ir, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
-    ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.ellipse(ix - ir * .38, iy - ir * .4, ir * .26, ir * .2, -.5, 0, TAU); ctx.fill();
-    ctx.beginPath(); ctx.arc(ix + ir * .42, iy + ir * .38, ir * .1, 0, TAU); ctx.fill();
-    if (o.refl) { ctx.fillStyle = 'rgba(255,255,255,.55)'; for (let k = 0; k < 3; k++) ctx.fillRect(ix - ir * .62, iy - ir * .7 + k * ir * .17, ir * .55, ir * .07); }
-    ctx.fillStyle = lg(ctx, 0, ey - hMax * 1.2, 0, ey, [[0, 'rgba(40,16,10,.55)'], [1, 'rgba(40,16,10,0)']]); ctx.fillRect(ex - a * 1.2, ey - hMax * 1.6, a * 2.4, hMax * 1.6);
-    ctx.restore();
-  }
-  // pálpebra superior (traço grosso) + cílios
-  ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#2a1824';
-  ctx.lineWidth = S * (open > .04 ? .034 : .026); ctx.beginPath(); ctx.moveTo(inner, ey); ctx.bezierCurveTo(inner + (outer - inner) * .18, uy, inner + (outer - inner) * .82, uy - .02 * S, outer, oy); ctx.stroke();
-  ctx.lineWidth = S * .05; ctx.beginPath(); ctx.moveTo(outer - side * a * .1, oy); ctx.lineTo(outer + side * .12 * S, oy - .06 * S); ctx.stroke();
-  ctx.lineWidth = S * .018; for (let k = 0; k < 3; k++) { const u = .35 + k * .22, bx = lerp(inner, outer, u), by = oy + (uy - oy) * .5 * (1 - Math.abs(u - .5) * 1.2) + ey * .0; ctx.beginPath(); ctx.moveTo(bx, by + (ey - by) * .0); ctx.lineTo(bx + side * .04 * S, by - .06 * S); ctx.stroke(); }
-  if (open > .04) { ctx.strokeStyle = 'rgba(120,70,60,.55)'; ctx.lineWidth = S * .012; ctx.beginPath(); ctx.moveTo(inner, ey); ctx.bezierCurveTo(inner + (outer - inner) * .2, ly, inner + (outer - inner) * .8, ly, outer, oy); ctx.stroke(); }
-  // dobra da pálpebra
-  ctx.strokeStyle = 'rgba(90,45,30,.55)'; ctx.lineWidth = S * .014; ctx.beginPath(); ctx.moveTo(inner + (outer - inner) * .1, uy - hMax * .55 - (1 - open) * .02 * S); ctx.quadraticCurveTo(ex, uy - hMax * 1.1 - (1 - open) * .03 * S, outer, oy - hMax * .55); ctx.stroke();
-}
+/* ---------- olhos em close (extreme close-up) — usa o mesmo olho de anime de chars.js (c2eye) ---------- */
+/* cx,cy = ponto entre os olhos; S = escala (olhos a ±0,74·S). Opções: skin/skinTop/skinBot, magical(0..1), open, look[x,y], brow(-1..1),
+   irisIn/irisMid/irisOut (compat) ou iris0/iris1, pupil, starIris, glowIris, refl, tear(0..1), hair (sobrancelha), lash(0-2), t, style('open'|'love'|'stars'|'sad'|'determined'|'scared'), blink(0..1), autoBlink */
 function eyesCU(ctx, cx, cy, S, o = {}) {
-  const brow = o.brow || 0, t = o.t || 0;
-  ctx.fillStyle = lg(ctx, 0, cy - S * 1.2, 0, cy + S * 1.2, [[0, o.skinTop || '#a96d47'], [.5, o.skin || '#b97a52'], [1, o.skinBot || '#a9704a']]); ctx.fillRect(-100, cy - S * 1.6, W + 200, S * 3.2);
-  for (const sg of [-1, 1]) {
-    const ex = cx + sg * .74 * S; ctx.fillStyle = rg(ctx, ex, cy, S * .1, S * .6, [[0, 'rgba(214,110,84,.3)'], [1, 'rgba(214,110,84,0)']]); ctx.fillRect(ex - S * .7, cy - S * .7, S * 1.4, S * 1.4);
-  }
-  ctx.fillStyle = lg(ctx, cx - S * .3, 0, cx + S * .3, 0, [[0, 'rgba(120,70,45,0)'], [.5, 'rgba(120,70,45,.22)'], [1, 'rgba(120,70,45,0)']]); ctx.fillRect(cx - S * .3, cy - S * .5, S * .6, S * 1.4);
+  const t = o.t || 0, m = clamp(o.magical || 0), brow = o.brow || 0;
+  const skin = o.skin || mix('#b8754d', '#fdeadf', m), skinSh = o.skinSh || mix('#94583a', '#f1c6bc', m), blush = mix('#d65a4c', '#ff8fae', m);
+  const iris0 = o.iris0 || o.irisOut && mix(o.irisOut, '#3a1c10', .0) || mix('#3a1c10', '#5a3bd0', m), iris1 = o.iris1 || o.irisIn || mix('#cf8c48', '#ff9bdc', m);
+  ctx.fillStyle = lg(ctx, 0, cy - S * 1.2, 0, cy + S * 1.2, [[0, o.skinTop || mix(skin, '#000000', .06)], [.5, skin], [1, o.skinBot || mix(skin, skinSh, .5)]]); ctx.fillRect(-100, cy - S * 1.6, W + 200, S * 3.2);
+  // luz de recorte no topo e sombra do nariz
+  ctx.fillStyle = lg(ctx, cx - S * .34, 0, cx + S * .34, 0, [[0, rgba(skinSh, 0)], [.5, rgba(skinSh, .38)], [1, rgba(skinSh, 0)]]); ctx.fillRect(cx - S * .34, cy - S * .6, S * .68, S * 1.6);
+  for (const sg of [-1, 1]) { const ex = cx + sg * .74 * S; ctx.fillStyle = rg(ctx, ex, cy + S * .62, S * .05, S * .62, [[0, rgba(blush, .55)], [1, rgba(blush, 0)]]); ctx.fillRect(ex - S * .7, cy, S * 1.4, S * 1.4); }
+  const u = S * 2.2, open = o.open == null ? 1 : o.open, bl = o.blink != null ? o.blink : (o.autoBlink === false ? 0 : 1 - c2blinkOp(t, o.seed || 1));
+  const st = o.style || 'open', tilt = st === 'determined' ? .85 : st === 'sad' ? -.7 : brow * .2;
   for (const sg of [-1, 1]) {
     const ex = cx + sg * .74 * S;
-    oneEye(ctx, ex, cy, S, sg, { ...o, open: o.open == null ? 1 : o.open, look: o.look });
+    ctx.save(); ctx.translate(ex, cy); ctx.scale(u, u);
+    const Q = c2Q(ctx, {}); Q.ol = .012; Q.pxu = u;
+    const look = o.look || [0, 0];
+    c2eye(ctx, Q, { sd: sg, rx: .265, ry: .335, op: open * (1 - bl), tilt, look, iris0, iris1, ink: o.ink || mix(mix('#1c0e10', '#4a1f5a', m), '#000', .2), lash: o.lash == null ? 2 : o.lash, style: st, t, big: true, hl: 3, wet: o.tear || st === 'sad', glow: o.glowIris, star: o.starIris, tear: o.tear || 0, skinSh, pupil: o.pupil, white: o.white });
+    if (o.refl) { ctx.fillStyle = 'rgba(255,255,255,.4)'; for (let k = 0; k < 3; k++) ctx.fillRect(-.12, -.2 + k * .06, .2, .02); }
+    ctx.restore();
     // sobrancelha
-    const by = cy - S * (.55 + (o.open == null ? 1 : o.open) * .06 + brow * .07), ib = ex - sg * .3 * S, ob = ex + sg * .42 * S;
-    ctx.strokeStyle = o.hair || '#1e1410'; ctx.lineCap = 'round'; ctx.lineWidth = S * .08;
-    ctx.beginPath(); ctx.moveTo(ib, by + (brow < 0 ? -brow * -.09 * S : 0) + (brow < 0 ? .09 * S * -brow : 0) * 0); ctx.quadraticCurveTo(ex, by - .08 * S - (brow > 0 ? .03 * S : 0), ob, by + .04 * S + (brow < 0 ? -.07 * S * -brow * 0 : 0)); ctx.stroke();
-    ctx.lineWidth = S * .045; ctx.beginPath(); ctx.moveTo(ib, by); ctx.lineTo(ob, by + .05 * S); ctx.stroke();
+    const ib = ex - sg * .3 * S, ob = ex + sg * .5 * S, by = cy - S * (.7 + open * .06 + brow * .07);
+    ctx.strokeStyle = o.hair || mix('#1c110c', '#d070b0', m); ctx.lineCap = 'round'; ctx.lineWidth = S * .07;
+    ctx.beginPath(); ctx.moveTo(ib, by + (brow < 0 ? -brow * .06 * S : brow * -.05 * S)); ctx.quadraticCurveTo(ex, by - .1 * S - (brow > 0 ? .02 * S : 0), ob, by + .05 * S + (brow < 0 ? brow * .05 * S : 0)); ctx.stroke();
   }
-  // nariz
-  ctx.strokeStyle = 'rgba(110,60,38,.6)'; ctx.lineWidth = S * .022; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(cx - S * .07, cy + S * .55); ctx.quadraticCurveTo(cx, cy + S * .62, cx + S * .07, cy + S * .55); ctx.stroke();
+  // narizinho
+  ctx.strokeStyle = rgba(skinSh, .95); ctx.lineWidth = S * .026; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(cx - S * .08, cy + S * .62); ctx.quadraticCurveTo(cx, cy + S * .7, cx + S * .08, cy + S * .62); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.beginPath(); ctx.ellipse(cx - S * .02, cy + S * .52, S * .035, S * .025, 0, 0, TAU); ctx.fill();
 }
-/* franja de cabelo crespo (bolinhas) por cima do close */
-function fringe(ctx, cx, y0, S, t = 0, col = '#1e1410') {
+/* franja cacheada (bolinhas com contorno colorido e brilho) por cima do close */
+function fringe(ctx, cx, y0, S, t = 0, col = '#2d1b13') {
   const pts = []; for (let i = -9; i <= 9; i++) pts.push([cx + i * S * .27, y0 + (Math.abs(i) % 2 ? .14 : .02) * S + Math.sin(t * 2 + i) * 1.2 + Math.abs(i) * .012 * S, S * (.3 + (Math.abs(i * 7) % 3) * .03)]);
-  ctx.strokeStyle = '#0d0810'; ctx.lineWidth = S * .05; pts.forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], p[2], 0, TAU); ctx.stroke(); });
+  const ink = mix(col, '#14081a', .55), sh = mix(col, '#0a0414', .45), hi = mix(col, '#ffffff', .42);
+  ctx.strokeStyle = ink; ctx.lineWidth = S * .05; pts.forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], p[2], 0, TAU); ctx.stroke(); });
   ctx.fillStyle = col; ctx.fillRect(cx - S * 3, y0 - S * 1.6, S * 6, S * 1.6); pts.forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], p[2], 0, TAU); ctx.fill(); });
-  ctx.strokeStyle = 'rgba(160,120,90,.35)'; ctx.lineWidth = S * .03; ctx.beginPath(); ctx.moveTo(cx - S * .8, y0 - S * .1); ctx.quadraticCurveTo(cx, y0 - S * .25, cx + S * .6, y0 - S * .05); ctx.stroke();
+  pts.forEach((p, i) => { ctx.save(); ctx.beginPath(); ctx.arc(p[0], p[1], p[2], 0, TAU); ctx.clip(); ctx.fillStyle = sh; ctx.beginPath(); ctx.arc(p[0] + p[2] * .3, p[1] + p[2] * .35, p[2] * .95, 0, TAU); ctx.rect(p[0] - p[2] * 2, p[1] - p[2] * 2, p[2] * 4, p[2] * 4); ctx.fill('evenodd'); ctx.restore();
+    ctx.strokeStyle = rgba(hi, .6); ctx.lineWidth = S * .025; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(p[0], p[1], p[2] * .66, 3.5, 4.5); ctx.stroke();
+    ctx.strokeStyle = rgba(ink, .8); ctx.lineWidth = S * .018; ctx.beginPath(); ctx.arc(p[0] + p[2] * .1, p[1] + p[2] * .15, p[2] * .22, i, i + 4.2); ctx.stroke(); });
+  ctx.fillStyle = lg(ctx, 0, y0 - S * .1, 0, y0 + S * .4, [[0, 'rgba(60,30,20,.35)'], [1, 'rgba(60,30,20,0)']]);
 }
 
 /* ---------- persianas: faixas diagonais de luz ---------- */
@@ -117,25 +98,26 @@ function weight1000(ctx, x, y, s, rot = 0) {
   ctx.font = `44px ${FONTS.comic}`; ctx.strokeText('KG', 0, 32); ctx.fillStyle = '#fff'; ctx.fillText('KG', 0, 32);
   ctx.restore();
 }
-/* mão grande (silhueta de quadrinho). Aponta para cima; origem no pulso. curl 0=aberta … 1=punho */
+/* mão grande de close (aponta para cima; origem no pulso). curl 0=aberta … 1=punho. o: col, ol (contorno), sh (sombra), cuff */
 function bigHand(ctx, x, y, s, rot, curl, o = {}) {
-  const col = o.col || '#b97a52', ol = o.ol || '#1a1224', olw = o.olw || 6;
+  const col = o.col || '#b8754d', ol = o.ol || mix(col, '#2a1020', .62), sh = o.sh || mix(col, '#5a2418', .3), olw = o.olw || 6, hi = mix(col, '#ffffff', .3);
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  const fing = [[-33, 62, -4], [-11, 74, 0], [11, 68, 3], [33, 54, 7]];
+  const fing = [[-33, 62, -4, 25], [-11, 74, 0, 25], [11, 68, 3, 24], [33, 54, 7, 21]];
   const segf = (bx, by, L, base, c) => {
     const a1 = rad(base + c * 62), a2 = rad(base + c * 62 + c * 85), p1 = [bx + Math.sin(a1) * L * .55, by - Math.cos(a1) * L * .55], p2 = [p1[0] + Math.sin(a2) * L * .45, p1[1] - Math.cos(a2) * L * .45];
-    ctx.strokeStyle = ol; ctx.lineWidth = 25 + olw; ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
     return [[bx, by], p1, p2];
   };
   const fs = fing.map(f => segf(f[0], -92, f[1], f[2], curl));
-  // polegar
   const ta = rad(-55 + curl * 38), tp1 = [-42 + Math.sin(ta) * 40, -30 - Math.cos(ta) * 40], tp2 = [tp1[0] + Math.sin(ta - .3 + curl * .8) * 34, tp1[1] - Math.cos(ta - .3 + curl * .8) * 34];
-  ctx.strokeStyle = ol; ctx.lineWidth = 27 + olw; ctx.beginPath(); ctx.moveTo(-40, -28); ctx.lineTo(tp1[0], tp1[1]); ctx.lineTo(tp2[0], tp2[1]); ctx.stroke();
-  rrect(ctx, -50, -108, 100, 118, 30); ctx.fillStyle = ol; ctx.fill(); ctx.lineWidth = olw * 2; ctx.stroke();
-  fs.forEach(f => { ctx.strokeStyle = col; ctx.lineWidth = 25; ctx.beginPath(); ctx.moveTo(f[0][0], f[0][1]); ctx.lineTo(f[1][0], f[1][1]); ctx.lineTo(f[2][0], f[2][1]); ctx.stroke(); });
-  ctx.strokeStyle = col; ctx.lineWidth = 27; ctx.beginPath(); ctx.moveTo(-40, -28); ctx.lineTo(tp1[0], tp1[1]); ctx.lineTo(tp2[0], tp2[1]); ctx.stroke();
-  rrect(ctx, -47, -105, 94, 112, 28); ctx.fillStyle = col; ctx.fill();
-  if (o.cuff) { ctx.fillStyle = o.cuff; ctx.strokeStyle = ol; ctx.lineWidth = olw; ctx.fillRect(-56, 0, 112, 60); ctx.strokeRect(-56, 0, 112, 60); }
+  const strokeAll = (w, c) => { ctx.strokeStyle = c; fs.forEach((f, i) => { ctx.lineWidth = w + fing[i][3] - 25; ctx.beginPath(); ctx.moveTo(f[0][0], f[0][1]); ctx.lineTo(f[1][0], f[1][1]); ctx.lineTo(f[2][0], f[2][1]); ctx.stroke(); }); ctx.lineWidth = w + 2; ctx.beginPath(); ctx.moveTo(-40, -28); ctx.lineTo(tp1[0], tp1[1]); ctx.lineTo(tp2[0], tp2[1]); ctx.stroke(); };
+  strokeAll(25 + olw * 2, ol); rrect(ctx, -50, -108, 100, 118, 30); ctx.fillStyle = ol; ctx.fill(); ctx.lineWidth = olw * 2; ctx.strokeStyle = ol; ctx.stroke();
+  strokeAll(25, col); rrect(ctx, -47, -105, 94, 112, 28); ctx.fillStyle = col; ctx.fill();
+  // sombra (lado direito/baixo) das falanges e da palma
+  ctx.save(); rrect(ctx, -47, -105, 94, 112, 28); ctx.clip(); ctx.fillStyle = sh; ctx.fillRect(18, -110, 40, 130); ctx.fillStyle = rgba(sh, .6); ctx.fillRect(-50, -12, 100, 20); ctx.restore();
+  ctx.fillStyle = mix(col, '#ffd8d0', .55); fs.forEach(f => { ctx.save(); ctx.translate(f[2][0], f[2][1]); ctx.beginPath(); ctx.ellipse(0, 0, 8, 6, 0, 0, TAU); ctx.fill(); ctx.restore(); });
+  ctx.strokeStyle = rgba(ol, .5); ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-34, -52); ctx.quadraticCurveTo(0, -40, 36, -58); ctx.stroke();
+  ctx.fillStyle = rgba(hi, .35); ctx.beginPath(); ctx.ellipse(-26, -78, 8, 16, .1, 0, TAU); ctx.fill();
+  if (o.cuff) { ctx.fillStyle = o.cuff; ctx.strokeStyle = mix(o.cuff, '#1a0c24', .55); ctx.lineWidth = olw; ctx.fillRect(-56, 0, 112, 60); ctx.strokeRect(-56, 0, 112, 60); }
   ctx.restore();
 }
 
