@@ -119,7 +119,7 @@ function a_runBase(ctx, t, o) {
   drawSky(ctx, o.mood, t, { hy: 1000, cam: camX });
   const mx = o.moon[0] - camX * .012;
   drawMoon(ctx, mx, o.moon[1], o.moon[2], { glow: 1.1 });
-  godRays(ctx, mx, o.moon[1], t, { n: 12, len: 1500, a: .06, col: '255,240,210', sp: .02 });
+  godRays(ctx, mx, o.moon[1], t, { n: 8, len: 1300, a: .07, col: '255,240,210', sp: .02 });
   drawSkyline(ctx, camX, 1230, o.mood, { t, lit: .85, hillH: 520, seed: 2, noLayer: [4, 5] });
   drawPoles(ctx, camX * .55, roofY - 60, { t, gap: 380, h: 330, s: .6, par: 1, flags: true, mood: o.mood, col: '#0b0b1e' });
   ctx.restore();
@@ -485,9 +485,9 @@ function a_crowd(ctx, t, L, D) {
   ctx.fillStyle = lg(ctx, 0, wallTop, 0, gy, [[0, '#8e93a0'], [1, '#6a6f7c']]); ctx.fillRect(-200, wallTop, W + 400, gy - wallTop);
   ctx.fillStyle = 'rgba(255,255,255,.14)'; ctx.fillRect(-200, wallTop, W + 400, 3); ctx.fillStyle = 'rgba(20,24,40,.35)'; ctx.fillRect(-200, wallTop + 3, W + 400, 14);
   const px = ((-camX * .55) % 220 + 220) % 220 - 220; ctx.fillStyle = 'rgba(0,0,0,.12)'; for (let x = px; x < W + 100; x += 220) ctx.fillRect(x, wallTop + 17, 3, gy - wallTop);
-  const tx = 360 + (22.9 - t) * 90;
+  const tx = 360 + (23.0 - t) * 60;
   ctx.save(); ctx.translate(tx, 640); ctx.rotate(-.04);
-  ctx.font = '118px "Permanent Marker", "Bangers", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round';
+  ctx.font = '96px "Permanent Marker", "Bangers", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round';
   ctx.strokeStyle = 'rgba(10,14,30,.55)'; ctx.lineWidth = 14; ctx.strokeText('OBRIGAÇÃO', 4, 6);
   ctx.fillStyle = '#e8f0ff'; ctx.fillText('OBRIGAÇÃO', 0, 0);
   ctx.fillStyle = 'rgba(232,240,255,.9)'; for (let i = 0; i < 6; i++) { const dx = -260 + i * 100 + (i % 2) * 20, dl = 30 + (i * 37) % 60; ctx.fillRect(dx, 12, 6, dl); ctx.beginPath(); ctx.arc(dx + 3, 12 + dl, 5, 0, TAU); ctx.fill(); }
@@ -504,7 +504,7 @@ function a_crowd(ctx, t, L, D) {
   // plano médio (anda junto com a câmera): herói no meio
   const mid = [[70, 'crowd'], [150, 'mae'], [235, 'crowd'], [470, 'old'], [560, 'crowd'], [650, 'adult']];
   mid.forEach((m, i) => drawSil(ctx, m[0] + Math.sin(t * 1.3 + i) * 5, gy + 4, 39, 'walk', { who: m[1], seed: i * 5 + 1, t: t, walk: 5.5 + (i % 3) * .3, col: '#171c30', amb: cool, ambA: .45}));
-  a_rimHero(ctx, 360, gy + 6, 44, walkPose(t * 5.9, 6), { t: t, pack: true }, '#cfd8f0', -2, -.8);
+  a_rimHero(ctx, 360, gy + 6, 50, walkPose(t * 5.9, 6), { t: t, pack: true }, '#cfd8f0', -2, -.8);
   // plano próximo (passa mais devagar que a câmera => desliza para trás)
   [[40, 'crowd'], [330, 'old'], [640, 'mae']].forEach((m, i) => {
     const x = (((m[0] - camX * 1.45) % 980) + 980) % 980 - 130;
@@ -515,9 +515,9 @@ function a_crowd(ctx, t, L, D) {
   // tons frios: lavagem azul-cinza, o boné vermelho permanece (desenhado depois sem lavagem)
   ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgba(176,192,226,.55)'; ctx.fillRect(0, 0, W, H); ctx.restore();
   ctx.save(); a_cam(ctx, c); // boné vermelho por cima da lavagem
-  const hp = charPt(360, gy + 6, 44, walkPose(t * 5.9, 6), 'head');
+  const hp = charPt(360, gy + 6, 50, walkPose(t * 5.9, 6), 'head');
   ctx.beginPath(); ctx.rect(hp[0] - 50, hp[1] - 60, 120, 100); ctx.clip();
-  drawHero(ctx, 360, gy + 6, 44, walkPose(t * 5.9, 6), { t: t, pack: true, shadow: false, col: 'rgba(0,0,0,0)' });
+  drawHero(ctx, 360, gy + 6, 50, walkPose(t * 5.9, 6), { t: t, pack: true, shadow: false });
   ctx.restore();
   fxVignette(ctx, .55, '8,10,22');
   // a luz cai: dip de energia
