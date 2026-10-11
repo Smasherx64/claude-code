@@ -13,7 +13,7 @@ window.ready = (async () => {
   await document.fonts.load('40px "Noto Color Emoji"', '✂️🦗🔒💸😴✨💃⭐'); await document.fonts.ready;
   if (typeof initWorld === 'function') initWorld(); if (typeof fxWarm === 'function') fxWarm();
 })();
-const _g = n => (typeof globalThis[n] !== 'undefined' ? globalThis[n] : []);
+const _g = n => { try { return (0, eval)(`typeof ${n} !== 'undefined' ? ${n} : []`); } catch (e) { return []; } }; // aceita const/let/var globais
 const SCENES = [].concat(_g('SCENES_A'), _g('SCENES_B'), _g('SCENES_C'), _g('SCENES_D'), _g('SCENES_E'), _g('SCENES_F'), _g('SCENES_G')).sort((a, b) => a.t0 - b.t0);
 const IMPACTS = [].concat(_g('IMPACTS_A'), _g('IMPACTS_B'), _g('IMPACTS_C'), _g('IMPACTS_D'), _g('IMPACTS_E'), _g('IMPACTS_F'), _g('IMPACTS_G'));
 /* cobertura contínua? (aviso no console) */
