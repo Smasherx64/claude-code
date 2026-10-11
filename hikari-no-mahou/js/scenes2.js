@@ -10,24 +10,28 @@ const NEIGH = [
   { x: 1340, i: 2, hair: 3, say: ['LOUCO!', 9.96, 10.9], tail: -1 },
   { x: 1610, i: 3, hair: 1, say: ['kkkkk', 10.3, 10.9], tail: -1 },
 ];
+/* casinhas da viela em escala "de primeiro plano" (1–2 andares) sobre o morro ao fundo */
+const LANE_K = 2.5;
+const LANE = (() => { const src = CITY[2].blocks, out = []; let x = -500; for (let i = 0; i < 12; i++) { const b = src[14 + i], nf = i % 3 === 1 ? 3 : 2; out.push({ b: Object.assign({}, b, { x: 0, nf, h: nf * b.rowH }), x }); x += b.w * LANE_K + (b.alley ? b.alley * LANE_K : 0) + 6; } return out; })();
 function sceneStreet(ctx, t, L, D) {
   const camX = L * 170, y0 = 610;
   ctx.save(); cam(ctx, { x: W / 2, y: H / 2, z: lerp(1, 1.06, L / D), r: -.012 });
   ctx.fillStyle = lg(ctx, 0, -200, 0, y0, [[0, '#8f97a2'], [1, '#d5d7da']]); ctx.fillRect(-300, -300, W + 600, y0 + 400);
-  drawCity(ctx, camX * .9, y0 + 90, 0, { lit: .06 });
-  streetGround(ctx, y0);
+  drawCity(ctx, camX * .9, y0 + 90, 0, { lit: .06, noLayer: [2] });
+  { const P = pal(0, 0); for (const it of LANE) { const sx = it.x - camX; if (sx > W + 100 || sx + (it.b.w + (it.b.alley || 0)) * LANE_K < -100) continue; ctx.save(); ctx.translate(sx, y0 + 6); ctx.scale(LANE_K, LANE_K); if (it.b.alley) drawAlley(ctx, it.b, 2, P, { c: 0 }); drawBlock(ctx, it.b, 2, P, { lit: .05, c: 0, t }); ctx.restore(); } }
+  streetGround(ctx, y0, 0, camX);
   // postes passando em primeiro plano
   for (let k = 0; k < 4; k++) { const x = ((k * 560 - camX * 1.25) % 2240 + 2240) % 2240 - 300; lampPost(ctx, x, y0 + 40, 360); }
   // vizinhos cinzas apontando e rindo
   NEIGH.forEach(n => {
     const sx = n.x - camX, lt = t - n.say[1], a = lt > 0 ? 1 : 0;
     const pose = { lean: -4, head: -6 + (lt > 0 ? Math.sin(t * 18 + n.i) * 6 : 0), spread: .8, hs: .5, aR: [10, 6], aL: [lt > -.2 ? -92 : -10, lt > -.2 ? -94 : -6], lR: [4, 0], lL: [-4, 0] };
-    drawChar(ctx, sx, y0 + 66, 54, pose, { pal: neighPal(n.i, 0), hair: n.hair, flip: false, t: Math.floor(t * 12) / 12, face: { eye: lt > 0 && n.i === 2 ? 'spiral' : lt > 0 ? 'squint' : 'dot', mouth: lt > 0 ? 'grin' : 'flat', cheek: false }, wind: .2 });
+    drawChar(ctx, sx, y0 + 66, 47, pose, { pal: neighPal(n.i, 0), hair: n.hair, flip: false, t: Math.floor(t * 12) / 12, face: { eye: lt > 0 && n.i === 2 ? 'spiral' : lt > 0 ? 'squint' : 'dot', mouth: lt > 0 ? 'grin' : 'flat', cheek: false }, wind: .2 });
   });
   NEIGH.forEach(n => bubble(ctx, t, n.say[1], n.say[2], n.say[0], n.x - camX - 10, y0 - 120 - n.i % 2 * 46, { size: 34, rot: -.06 + n.i * .03, tail: [-.6, 1] }));
   // herói caminhando
   const tq = Math.floor(t * 12) / 12, wp = walkPose(tq * 9.5, 8);
-  const hx = 380, hy = y0 + 76; drawChar(ctx, hx, hy, 62, wp, { t: tq, wind: 1.3, face: { eye: t > 10.2 ? 'determined' : 'open', mouth: 'flat', look: [1, 0] } });
+  const hx = 380, hy = y0 + 76; drawChar(ctx, hx, hy, 54, wp, { t: tq, wind: 1.3, face: { eye: t > 10.2 ? 'determined' : 'open', mouth: 'flat', look: [1, 0] } });
   ctx.restore();
   // painel diagonal de mangá: close no olho (acreditar)
   const pw = E.out5(seg(t, 10.12, 10.45)) * 560;

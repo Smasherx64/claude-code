@@ -62,15 +62,15 @@ function rainbow(ctx, cx, cy, R, w, a = .5) {
 }
 /* céu pastel holográfico (rosa→lilás→azul-bebê) com textura da nebulosa */
 function kawaiiSky(ctx, t, o = {}) {
-  ctx.fillStyle = lg(ctx, 0, -300, 0, H + 300, [[0, o.top || '#b9a2ff'], [.5, o.mid || '#ffb7e2'], [1, o.bot || '#bfe9ff']]); ctx.fillRect(-400, -400, W + 800, H + 800);
+  ctx.fillStyle = lg(ctx, 0, -300, 0, H + 300, [[0, o.top || '#9b83f5'], [.5, o.mid || '#ff9ed3'], [1, o.bot || '#9fdcff']]); ctx.fillRect(-400, -400, W + 800, H + 800);
   if (o.neb !== 0) { ctx.save(); ctx.globalAlpha = o.neb == null ? .55 : o.neb; ctx.globalCompositeOperation = 'soft-light'; drawNebula(ctx, -140, -140, W + 280, H + 280, { z: o.z || 1.2, ox: (o.ox || 0) + Math.sin(t * .3) * 60, oy: o.oy || 0 }); ctx.restore(); }
-  ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = rg(ctx, o.gx || W * .55, o.gy || 250, 0, 520, [[0, 'rgba(255,255,255,.65)'], [.4, 'rgba(255,225,245,.28)'], [1, 'rgba(255,225,245,0)']]); ctx.fillRect(-400, -400, W + 800, H + 800); ctx.restore();
+  ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = rg(ctx, o.gx || W * .55, o.gy || 250, 0, 520, [[0, 'rgba(255,255,255,.4)'], [.4, 'rgba(255,225,245,.16)'], [1, 'rgba(255,225,245,0)']]); ctx.fillRect(-400, -400, W + 800, H + 800); ctx.restore();
 }
 /* lavagem pastel por cima do mundo (deixa o escuro lilás-rosado e brilhante) */
 function pastelWash(ctx, a = 1, t = 0, soft = 1) {
   ctx.save(); ctx.globalCompositeOperation = 'screen';
-  ctx.fillStyle = lg(ctx, 0, -300, 0, H + 300, [[0, `rgba(190,160,255,${.42 * a})`], [.55, `rgba(255,170,220,${.42 * a})`], [1, `rgba(255,215,190,${.34 * a})`]]); ctx.fillRect(-400, -400, W + 800, H + 800);
-  ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = .55 * a * soft; ctx.fillStyle = holoLin(ctx, 0, 0, W, H, 1, Math.floor(t * 1.5) % 5); ctx.fillRect(-400, -400, W + 800, H + 800);
+  ctx.fillStyle = lg(ctx, 0, -300, 0, H + 300, [[0, `rgba(170,140,255,${.26 * a})`], [.55, `rgba(255,150,210,${.26 * a})`], [1, `rgba(255,200,180,${.2 * a})`]]); ctx.fillRect(-400, -400, W + 800, H + 800);
+  ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = .4 * a * soft; ctx.fillStyle = holoLin(ctx, 0, 0, W, H, 1, Math.floor(t * 1.5) % 5); ctx.fillRect(-400, -400, W + 800, H + 800);
   ctx.restore();
 }
 
@@ -171,7 +171,7 @@ function prismFlare(ctx, x, y, size = 1, a = 1, t = 0) {
   ctx.lineWidth = 3 * size; ctx.strokeStyle = holoGrad(ctx, x, y, t, a * .6); ctx.beginPath(); ctx.arc(x, y, 150 * size, 0, TAU); ctx.stroke();
   ctx.lineWidth = 2 * size; ctx.beginPath(); ctx.arc(x, y, 190 * size, 0, TAU); ctx.stroke();
   for (let k = -2; k <= 2; k++) { if (!k) continue; const gx = x - k * 120 * size, gr = (24 + Math.abs(k) * 8) * size; ctx.fillStyle = rg(ctx, gx, y, 0, gr, [[0, `rgba(${PST_RGB[(k + 5) % 5]},${a * .5})`], [1, `rgba(${PST_RGB[(k + 5) % 5]},0)`]]); ctx.fillRect(gx - gr, y - gr, gr * 2, gr * 2); }
-  ctx.restore(); glint(ctx, x, y, 70 * size * a, t * .3, '#fff');
+  ctx.restore(); glint(ctx, x, y, 40 * size * a, t * .3, '#fff');
 }
 
 /* ---------- asas ---------- */
@@ -213,7 +213,7 @@ function wingsButterfly(ctx, x, y, s, flap = 0, a = 1, rot = 0) {
 function heartCircle(ctx, x, y, R, t, a = 1, o = {}) {
   if (a <= .01) return; const kind = o.kind || 'heart', runes = o.runes || '魔法星夢光愛希望信';
   ctx.save(); ctx.translate(x, y); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.fillStyle = rg(ctx, 0, 0, 0, R * 1.05, [[0, `rgba(255,214,240,${.42 * a})`], [.7, `rgba(205,175,255,${.2 * a})`], [1, 'rgba(205,175,255,0)']]); ctx.beginPath(); ctx.arc(0, 0, R * 1.05, 0, TAU); ctx.fill();
+  if (!o.nofill) { ctx.fillStyle = rg(ctx, 0, 0, 0, R * 1.05, [[0, `rgba(255,214,240,${.3 * a})`], [.7, `rgba(205,175,255,${.16 * a})`], [1, 'rgba(205,175,255,0)']]); ctx.beginPath(); ctx.arc(0, 0, R * 1.05, 0, TAU); ctx.fill(); }
   const hg = holoGrad(ctx, 0, 0, t * .7, .95 * a);
   ctx.strokeStyle = hg; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.stroke(); ctx.lineWidth = 2.2; ctx.beginPath(); ctx.arc(0, 0, R * .92, 0, TAU); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, R * .58, 0, TAU); ctx.stroke();
   ctx.fillStyle = `rgba(255,248,252,${.9 * a})`; for (let i = 0; i < 48; i++) { const an = i / 48 * TAU + t * .25; ctx.beginPath(); ctx.arc(Math.cos(an) * R * .96, Math.sin(an) * R * .96, i % 4 ? 1.6 : 3, 0, TAU); ctx.fill(); }
@@ -238,7 +238,7 @@ function charSilhouette(ctx, x, y, s, pose, o, amt, spin = 0) {
   if (!_sil) { _sil = document.createElement('canvas'); _sil.width = w * K; _sil.height = h * K; }
   const g = _sil.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, _sil.width, _sil.height); g.setTransform(K, 0, 0, K, 0, 0);
   drawChar(g, ox, oy, s, pose, { ...o, shadow: false });
-  if (amt > 0) { g.globalCompositeOperation = 'source-atop'; g.globalAlpha = amt; g.fillStyle = lg(g, 0, oy - s * 9, 0, oy, [[0, '#ffffff'], [.5, '#ffe6f6'], [1, '#d6efff']]); g.fillRect(0, 0, w, h); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+  if (amt > 0) { g.globalCompositeOperation = 'source-atop'; g.globalAlpha = amt; g.fillStyle = lg(g, 0, oy - s * 9, 0, oy, [[0, '#ffffff'], [.45, '#ffc2ec'], [1, '#a8dcff']]); g.fillRect(0, 0, w, h); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
   const sx = Math.max(.1, Math.abs(Math.cos(spin)));
   ctx.save(); ctx.translate(x, y); ctx.scale(sx, 1); ctx.drawImage(_sil, 0, 0, w * K, h * K, -ox, -oy, w, h); ctx.restore();
 }

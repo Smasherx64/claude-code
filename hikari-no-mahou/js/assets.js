@@ -76,7 +76,7 @@ const CITY = (() => {
   const r = rng(11), defs = [
     { par: .22, fMin: 5, fMax: 9, wMin: 80, wMax: 140, fog: .62, rowH: 40 },
     { par: .5, fMin: 5, fMax: 11, wMin: 100, wMax: 170, fog: .32, rowH: 46 },
-    { par: 1, fMin: 4, fMax: 12, wMin: 120, wMax: 200, fog: 0, rowH: 52 },
+    { par: 1, fMin: 3, fMax: 9, wMin: 120, wMax: 200, fog: 0, rowH: 52 },
   ];
   return defs.map((d, li) => {
     const blocks = []; let x = -3200, bi = 0;
@@ -317,7 +317,7 @@ function drawBlock(ctx, b, li, P, o = {}) {
 /* beco com escada entre duas casas (desenhado onde a lacuna `alley` aparece) */
 function drawAlley(ctx, b, li, P, o = {}) {
   const gx = b.x + b.w, gw = b.alley, shaftH = Math.min(b.h, 300) * (li === 2 ? .85 : .8), near = li === 2, c = o.c || 0;
-  ctx.fillStyle = mix(P.shadeTo, P.fog, li === 0 ? .5 : li === 1 ? .25 : 0); ctx.fillRect(gx, -shaftH, gw, shaftH);
+  ctx.fillStyle = lg(ctx, 0, -shaftH, 0, 0, [[0, mix(P.shadeTo, P.fog, li === 0 ? .5 : li === 1 ? .25 : .1)], [1, mix(P.shadeTo, P.slab, .2)]]); ctx.fillRect(gx, -shaftH, gw, shaftH);
   const sc = mix(P.slab, P.shadeTo, .12);
   let sx = gx, sy = 0; const flights = 3, rise = shaftH * .24, run = gw * .92; ctx.lineJoin = 'round';
   for (let fi = 0; fi < flights; fi++) {
@@ -328,7 +328,7 @@ function drawAlley(ctx, b, li, P, o = {}) {
   }
   if (near && c > .25) { // lâmpada pendurada na viela
     const a = clamp(c * 1.2); ctx.strokeStyle = P.wire; ctx.beginPath(); ctx.moveTo(gx + gw / 2, -shaftH); ctx.lineTo(gx + gw / 2, -shaftH + 26); ctx.stroke();
-    ctx.fillStyle = rgba('#ffd87a', .25 * a); ctx.beginPath(); ctx.arc(gx + gw / 2, -shaftH + 30, 22, 0, TAU); ctx.fill(); ctx.fillStyle = rgba('#fff2b0', a); ctx.beginPath(); ctx.arc(gx + gw / 2, -shaftH + 30, 4, 0, TAU); ctx.fill();
+    ctx.fillStyle = rg(ctx, gx + gw / 2, -shaftH + 30, 0, 34, [[0, rgba('#ffd87a', .55 * a)], [1, rgba('#ffd87a', 0)]]); ctx.fillRect(gx + gw / 2 - 34, -shaftH - 4, 68, 68); ctx.fillStyle = rgba('#fff2b0', a); ctx.beginPath(); ctx.arc(gx + gw / 2, -shaftH + 30, 4, 0, TAU); ctx.fill();
   }
 }
 function drawPole(ctx, p, li, P) {
