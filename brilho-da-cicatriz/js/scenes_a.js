@@ -184,12 +184,256 @@ function a_dawnWindow(ctx, t, L, D) {
   fxVignette(ctx, .45, '20,10,16');
 }
 
-/* ---- lista provisória (será substituída) ---- */
+
+/* ============================================================
+   3. QUARTO — despertador, olhos, peso do dia
+   ============================================================ */
+/* menina na cama (deitada), com cobertor por cima do corpo. awake 0..1 muda o rosto */
+function a_heroBed(ctx, t, o = {}) {
+  const tt = a_tw(t), br = Math.sin(t * 2.2) * 1.6, x = 252, y = 452 + br * .5;
+  drawChar(ctx, x, y, 30, POSE.sleep, { who: 'hero', t: tt, face: o.face || 'closed', flip: true, shadow: false, autoBlink: false });
+  // cobertor mostarda por cima do corpo (deixa cabeça/ombro de fora)
+  ctx.save(); ctx.beginPath(); ctx.moveTo(262, 452 + br); ctx.bezierCurveTo(300, 436 + br, 360, 456, 420, 440); ctx.bezierCurveTo(470, 428, 520, 442, 564, 450); ctx.lineTo(564, 516); ctx.lineTo(262, 516); ctx.closePath();
+  ctx.fillStyle = lg(ctx, 0, 430, 0, 516, [[0, '#f6c24a'], [1, '#d99a22']]); ctx.fill(); ctx.strokeStyle = '#a8741a'; ctx.lineWidth = 2.2; ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,240,170,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(270, 456 + br); ctx.bezierCurveTo(310, 440 + br, 360, 460, 420, 444); ctx.stroke(); ctx.restore();
+}
+/* mão da menina batendo no despertador (u 0..1: chega, bate, volta) */
+function a_slapHand(ctx, u, cx, cy) {
+  if (u <= 0 || u >= 1) return;
+  const go = E.out3(seg(u, 0, .28)), back = E.in2(seg(u, .55, 1)), k = go * (1 - back);
+  const sx = 250, sy = 380, hx = lerp(sx, cx - 6, k), hy = lerp(sy, cy - 40, k) + Math.sin(u * 9) * 2 * (1 - k);
+  ctx.save(); ctx.strokeStyle = '#a8741a'; ctx.lineCap = 'round'; ctx.lineWidth = 44; ctx.beginPath(); ctx.moveTo(sx - 30, sy - 40); ctx.quadraticCurveTo(lerp(sx, hx, .4), lerp(sy - 60, hy - 60, .5), hx - 14, hy - 26); ctx.stroke();
+  ctx.strokeStyle = '#ecaa2a'; ctx.lineWidth = 38; ctx.stroke(); ctx.restore();
+  bigHand(ctx, hx, hy, .42, 2.45 - k * .35, .1 + .5 * (1 - k), { cuff: null });
+}
+function a_roomClock(ctx, t, L, D) {
+  const k = L / D, tHit = 11.76, ring = t < tHit ? 1 : 0, zk = E.io3(seg(L, 0, .75));
+  ctx.save(); const z = lerp(1.0, 2.0, zk); ctx.translate(W / 2, H / 2); ctx.rotate(lerp(-.02, .03, zk)); ctx.scale(z, z); ctx.translate(-lerp(640, 600, zk), -lerp(360, 400, zk));
+  const r = intRoom(ctx, t, { sun: .35 + .65 * E.out2(seg(L, 0, .5)), ring, time: '05:00' });
+  a_heroBed(ctx, t, { face: t < tHit ? 'pout' : 'closed' });
+  a_slapHand(ctx, seg(t, 11.66, 12.12), r.clock.x, r.clock.y);
+  // impacto: linhas de "tchan"
+  const hu = t - tHit; if (hu > 0 && hu < .3) { ctx.save(); ctx.strokeStyle = `rgba(255,255,255,${1 - hu / .3})`; ctx.lineWidth = 4; ctx.lineCap = 'round'; for (let i = 0; i < 9; i++) { const a = i / 9 * TAU, r0 = 44 + hu * 80, r1 = r0 + 26; ctx.beginPath(); ctx.moveTo(r.clock.x + Math.cos(a) * r0, r.clock.y - 20 + Math.sin(a) * r0); ctx.lineTo(r.clock.x + Math.cos(a) * r1, r.clock.y - 20 + Math.sin(a) * r1); ctx.stroke(); } ctx.restore(); }
+  ctx.restore();
+  fxDust(ctx, t, { x: 0, y: 0, w: W, h: H, n: 24, col: '255,236,180', a: .5, seed: 8, size: 1.2 });
+  fxVignette(ctx, .4, '8,14,28');
+  a_letterbox(ctx, 0);
+}
+/* close dos olhos com a luz do sol cruzando (vidraça trincada) */
+function a_eyesShot(ctx, t, L, D) {
+  const k = L / D, tOpen = 12.6, o = E.out2(seg(t, tOpen, tOpen + .22)), flut = t < tOpen ? .05 + .05 * Math.max(0, Math.sin(t * 15)) * seg(t, 12.3, 12.55) : 0;
+  const op = t < tOpen ? flut : lerp(.05, 1, o), cx = 640 + 12 * Math.sin(t * .8) - 20 * k, cy = 392, S = 158 * (1 + .06 * k);
+  ctx.save(); ctx.translate(W / 2, H / 2); ctx.rotate(lerp(-.04, .02, k)); ctx.translate(-W / 2, -H / 2);
+  // travesseiro ao fundo
+  ctx.fillStyle = lg(ctx, 0, 0, 0, H, [[0, '#f4e6dc'], [1, '#dcc4b8']]); ctx.fillRect(-100, -100, W + 200, H + 200);
+  ctx.strokeStyle = 'rgba(150,110,100,.22)'; ctx.lineWidth = 3; for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.moveTo(-50, 520 + i * 40); ctx.quadraticCurveTo(400, 480 + i * 40 + 20 * Math.sin(i), W + 50, 540 + i * 36); ctx.stroke(); }
+  eyesCU(ctx, cx, cy, S, { t: a_tw(t), open: 1, blink: 1 - op, autoBlink: false, brow: t < tOpen ? -.55 : lerp(-.4, .25, o), style: 'open', lash: 2, seed: 4 });
+  fringe(ctx, cx, cy - S * 1.02, S * .98, a_tw(t));
+  // luz do sol: faixa diagonal que cruza o rosto, com sombras de rachadura
+  const sx = lerp(-380, 1500, E.io2(seg(L, 0.0, D * .96))), warm = sstep(11.9, 12.5, t);
+  ctx.save(); ctx.translate(sx, 360); ctx.rotate(-.42);
+  ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = lg(ctx, -190, 0, 190, 0, [[0, 'rgba(255,214,130,0)'], [.5, `rgba(255,222,150,${.5 + .2 * warm})`], [1, 'rgba(255,214,130,0)']]); ctx.fillRect(-190, -700, 380, 1400);
+  ctx.globalCompositeOperation = 'source-over'; ctx.strokeStyle = 'rgba(70,40,30,.2)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  const rr = rng(21); ctx.beginPath(); for (let i = 0; i < 9; i++) { let x = (rr() - .5) * 280, y = -500 + i * 120 + rr() * 40; ctx.moveTo(x, y); for (let j = 0; j < 4; j++) { x += (rr() - .5) * 60; y += 24 + rr() * 30; ctx.lineTo(x, y); } } ctx.stroke(); ctx.restore();
+  ctx.restore();
+  flare(ctx, sx - 100, 250, 1.0, A_GOLD, .5 * warm, .6);
+  fxDust(ctx, t, { x: 0, y: 0, w: W, h: H, n: 26, col: '255,236,190', a: .9, seed: 4, size: 1.6 });
+  fxVignette(ctx, .55, '40,24,24');
+}
+/* pedra "SEG" cai e achata o travesseiro — o dia pesa */
+function a_rock(ctx, x, y, s, sq, face) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s * (1 + sq * .22), s * (1 - sq * .3)); ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(-86, 0); ctx.bezierCurveTo(-96, -70, -50, -112, 6, -108); ctx.bezierCurveTo(70, -104, 104, -60, 92, 0); ctx.closePath();
+  ctx.fillStyle = lg(ctx, -90, -110, 90, 0, [[0, '#9aa3b4'], [1, '#5c6578']]); ctx.fill(); ctx.strokeStyle = '#2c3144'; ctx.lineWidth = 5; ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.ellipse(-40, -78, 26, 11, -.5, 0, TAU); ctx.fill();
+  // calendário colado
+  ctx.save(); ctx.translate(22, -52); ctx.rotate(.08); ctx.fillStyle = '#fffaf0'; ctx.fillRect(-30, -26, 60, 56); ctx.strokeStyle = '#2c3144'; ctx.lineWidth = 3; ctx.strokeRect(-30, -26, 60, 56); ctx.fillStyle = '#e8453c'; ctx.fillRect(-30, -26, 60, 18); ctx.strokeRect(-30, -26, 60, 18);
+  ctx.fillStyle = '#fff'; ctx.font = `15px ${FONTS.comic}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('SEG', 0, -17); ctx.fillStyle = '#2c3144'; ctx.font = `26px ${FONTS.comic}`; ctx.fillText('5', 0, 12); ctx.restore();
+  // carinha cansada
+  ctx.strokeStyle = '#2c3144'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  if (face === 'x') { for (const sx of [-44, -10]) { ctx.beginPath(); ctx.moveTo(sx - 7, -64); ctx.lineTo(sx + 7, -50); ctx.moveTo(sx + 7, -64); ctx.lineTo(sx - 7, -50); ctx.stroke(); } }
+  else { for (const sx of [-44, -10]) { ctx.beginPath(); ctx.arc(sx, -56, 8, .1, Math.PI - .1); ctx.stroke(); } }
+  ctx.beginPath(); ctx.arc(-27, -30, 8, Math.PI + .3, -.3); ctx.stroke(); ctx.fillStyle = 'rgba(255,120,140,.55)'; ctx.beginPath(); ctx.ellipse(-58, -42, 8, 5, 0, 0, TAU); ctx.ellipse(6, -42, 8, 5, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+function a_weightShot(ctx, t, L, D) {
+  const tHit = 13.38, u = seg(t, 13.18, tHit), fall = E.in3(u), after = t - tHit;
+  const sq = after > 0 ? Math.exp(-after * 9) * Math.cos(after * 38) * .6 + .45 * Math.exp(-after * 4) : 0;
+  const sh = after > 0 && after < .35 ? shakeV(t, 14 * Math.exp(-after * 9), 40, 3) : [0, 0];
+  ctx.save(); ctx.translate(W / 2 + sh[0], H / 2 + sh[1]); const z = lerp(1.2, 1.35, E.out3(seg(L, 0, D))); ctx.scale(z, z); ctx.translate(-lerp(380, 340, seg(L, 0, D)), -440);
+  const r = intRoom(ctx, t, { sun: 1, ring: 0 });
+  const dent = after > 0 ? E.out3(seg(after, 0, .12)) : 0;
+  ctx.save(); ctx.translate(0, dent * 8); a_heroBed(ctx, t, { face: after > 0 ? 'shock' : 'closed' }); ctx.restore();
+  // pedra cai sobre o travesseiro
+  const ry = lerp(-260, 452, fall); a_rock(ctx, 190, ry + dent * 6, .95, after > 0 ? sq : 0, after > 0 ? 'x' : 'n');
+  // estrelinhas de impacto
+  if (after > 0 && after < .4) { ctx.save(); for (let i = 0; i < 6; i++) { const a = -Math.PI * (i + .5) / 6 - .1, d = 70 + after * 300; sparkle(ctx, 190 + Math.cos(a) * d * 1.2, 440 + Math.sin(a) * d * .9, 12 * (1 - after / .4), after * 8, '#fff6c8'); } ctx.restore(); }
+  ctx.restore();
+  fxVignette(ctx, .45, '8,14,28');
+}
+
+/* ============================================================
+   4. COZINHA — boletos e geladeira meio vazia
+   ============================================================ */
+function a_billsShot(ctx, t, L, D) {
+  const k = L / D, bills = E.out2(seg(t, 13.56, 14.06)), zk = E.io2(k);
+  ctx.save(); ctx.translate(W / 2, H / 2); ctx.rotate(lerp(.025, -.01, k)); const z = lerp(1.0, 1.3, zk); ctx.scale(z, z); ctx.translate(-lerp(640, 800, zk), -lerp(360, 300, zk));
+  const r = intKitchen(ctx, t, { open: 0, bills, light: 1 });
+  // menina olha o mural (sonolenta -> chocada em 'pagar')
+  const face = t < 13.84 ? 'sleepy' : t < 14.4 ? 'shock' : 'sad';
+  const bob = Math.sin(a_tw(t) * 6) * 1.2;
+  drawChar(ctx, 760, r.floorY + 6 + bob, 46, POSE.slump, { who: 'hero', t: a_tw(t), face, flip: false, turn: .4 });
+  // boletos extras estourando em torno do mural nos acentos 'Conta' e 'pagar'
+  for (const [tt, bx, by, rot, lab, amt] of [[13.56, 1090, 320, .2, 'LUZ', 'R$ 187,40'], [13.88, 940, 360, -.25, 'ÁGUA', 'R$ 94,10'], [13.72, 1180, 250, .1, 'GÁS', 'R$ 110,00']]) {
+    const u = a_at(t, tt, .22); if (u <= 0 || u >= 1 && t > tt + .45) continue; const fy = Math.max(0, t - tt - .1) * 90;
+    if (t > tt + .45) continue; ctx.save(); ctx.globalAlpha = 1 - seg(t, tt + .25, tt + .45); billSheet(ctx, bx, by + fy, rot, .24 * E.back(u), lab, amt, '#e0523a', false); ctx.restore();
+  }
+  ctx.restore();
+  fxVignette(ctx, .4, '24,18,30');
+}
+/* a geladeira com só um limão e um ovo; 'pela metade' parte os dois ao meio */
+function a_fridgeShot(ctx, t, L, D) {
+  const k = L / D, op = E.out3(seg(t, 14.12, 14.4)), zk = E.out3(seg(L, 0, .5));
+  ctx.save(); ctx.translate(W / 2, H / 2); ctx.rotate(lerp(-.02, .015, k)); const z = lerp(1.1, 1.85, E.io2(k)); ctx.scale(z, z); ctx.translate(-lerp(380, 250, k), -lerp(360, 410, k));
+  const r = intKitchen(ctx, t, { open: op, bills: 1, light: 1 });
+  const fr = r.fridge, ix = fr.x + 14, iy = fr.y + 150, iw = fr.w - 28, ih = fr.h - 164, sy = j => iy + 20 + j * (ih - 40) / 3.1;
+  if (op > .3) {
+    // esvazia o interior (sobrepõe) e deixa só 2 itens
+    ctx.fillStyle = lg(ctx, 0, iy, 0, iy + ih, [[0, '#f4fbff'], [1, '#c9dce6']]); ctx.fillRect(ix, iy, iw, ih); ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(ix, iy, 10, ih); ctx.fillRect(ix + iw - 8, iy, 8, ih);
+    for (let j = 0; j < 4; j++) { const y = sy(j); ctx.fillStyle = 'rgba(190,220,235,.85)'; ctx.fillRect(ix, y, iw, 7); ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.fillRect(ix, y, iw, 2); }
+    const half = E.out3(seg(t, 14.7, 14.95)), wob = Math.sin(t * 14) * 1.5 * (1 - half);
+    // limão
+    if (half < .01) lemon(ctx, ix + 70, sy(1) - 12, 22); else for (const sg of [-1, 1]) { ctx.save(); ctx.translate(ix + 70 + sg * (8 + 14 * half), sy(1) - 12 - Math.sin(half * Math.PI) * 10); ctx.rotate(sg * half * .3); ctx.beginPath(); ctx.ellipse(0, 0, 14, 20, 0, 0, TAU); ctx.fillStyle = '#ffe14a'; ctx.fill(); ctx.strokeStyle = '#14122a'; ctx.lineWidth = 3.5; ctx.stroke(); ctx.fillStyle = '#fff6b0'; ctx.beginPath(); ctx.ellipse(sg * -2, 0, 9, 14, 0, 0, TAU); ctx.fill(); ctx.strokeStyle = '#f0c820'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(sg * -2, -13); ctx.lineTo(sg * -2, 13); ctx.moveTo(-9, 0); ctx.lineTo(5, 0); ctx.stroke(); ctx.restore(); }
+    // ovo
+    if (half < .01) { ctx.save(); ctx.translate(ix + 165, sy(2) - 4 + wob); egg(ctx, 0, 0, .5); ctx.restore(); } else for (const sg of [-1, 1]) { ctx.save(); ctx.translate(ix + 165 + sg * (8 + 13 * half), sy(2) - 14 - Math.sin(half * Math.PI) * 12); ctx.rotate(sg * half * .5); ctx.beginPath(); ctx.moveTo(-sg * 14, 12); ctx.lineTo(-sg * 10, -4); ctx.lineTo(-sg * 4, 2); ctx.lineTo(sg * 0, -8); ctx.lineTo(sg * 6, 0); ctx.lineTo(sg * 12, -6); ctx.bezierCurveTo(sg * 18, 8, sg * 10, 20, 0, 22); ctx.bezierCurveTo(-sg * 8, 22, -sg * 14, 18, -sg * 14, 12); ctx.closePath(); ctx.fillStyle = '#fff3dd'; ctx.fill(); ctx.strokeStyle = '#14122a'; ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = '#ffb82e'; ctx.beginPath(); ctx.arc(-sg * 3, 8, 6, 0, TAU); ctx.fill(); ctx.restore(); }
+    // luz fria vazando para a cozinha
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = lg(ctx, ix, iy + 40, ix + 380, iy + 120, [[0, `rgba(180,225,255,${.32 * op})`], [1, 'rgba(180,225,255,0)']]); poly(ctx, [[ix + iw, iy], [ix + iw + 380, iy + 60], [ix + iw + 480, r.floorY + 40], [ix + iw, iy + ih]]); ctx.fill(); ctx.restore();
+  }
+  // menina espia (olhando a geladeira)
+  const lookIn = op; const hx = lerp(560, 468, E.out3(seg(t, 14.0, 14.3)));
+  drawChar(ctx, hx, r.floorY + 6, 46, lerpPose(POSE.stand, POSE.slump, .7), { who: 'hero', t: a_tw(t), face: t > 14.7 ? 'sad' : 'shock', flip: true, turn: -.5, rim: '180,225,255', light: -1 });
+  ctx.restore();
+  fxVignette(ctx, .4, '24,18,30');
+}
+
+/* ============================================================
+   5. A RUA ENSINOU — portão de escola trancado, muro de giz
+   ============================================================ */
+function a_walkHero(ctx, x, y, s, t, o = {}) {
+  const ph = a_tw(t) * TAU * 1.5, bob = Math.abs(Math.sin(ph)) * 3;
+  return drawChar(ctx, x, y - bob * 0, s, walkPose(ph, o.lean == null ? 6 : o.lean), Object.assign({ who: 'hero', t: a_tw(t), face: 'neutral' }, o));
+}
+function a_gateShot(ctx, t, L, D) {
+  const k = L / D, camX = lerp(0, 230, E.io2(k));
+  ctx.save(); ctx.translate(W / 2, H / 2); const z = lerp(1.0, 1.1, k); ctx.rotate(lerp(-.015, .01, k)); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2 + 18);
+  // portão no mundo x=720 ; câmera anda p/ a direita (paralaxe: fundo via camX)
+  const gx = 800 - camX * 1.0; drawSchoolGate(ctx, gx, 560, 1, 1, t, { scene: true, camX: camX * .9, lock: 1, w: 420 });
+  const lockWob = Math.max(0, 1 - Math.abs(t - 15.7) * 6) * Math.sin(t * 50) * .05;
+  // menina passa andando, olha de lado para o cadeado ('rua me ensinou')
+  const hx = lerp(150, 1010, E.io2(k)) - camX * 0 , face = (t > 15.3 && t < 16.0) ? 'sad' : 'neutral';
+  a_walkHero(ctx, hx, 618, 46, t, { face, turn: (t > 15.3 && t < 16.0) ? -.5 : .2 });
+  // pétala/papel voando (vida) — e poeira
+  fxDust(ctx, t, { x: 0, y: 300, w: W, h: 320, n: 20, col: '255,220,170', a: .5, seed: 11, size: 1.4 });
+  ctx.restore();
+  fxVignette(ctx, .4, '26,10,30');
+}
+function a_chalkShot(ctx, t, L, D) {
+  const k = L / D, p = E.io2(seg(L, 0.05, D * .92)), panX = lerp(20, -90, E.io2(k));
+  ctx.save(); ctx.translate(W / 2, H / 2); const z = lerp(1.08, 1.16, k); ctx.rotate(lerp(.01, -.012, k)); ctx.scale(z, z); ctx.translate(-W / 2 + panX, -H / 2 - 14);
+  const r = intChalkWall(ctx, t, { p, tone: 'day' });
+  // menina anda em frente ao muro desenhando com o giz na mão
+  const hx = lerp(240, 1000, E.io2(k)); const ph = a_tw(t) * TAU * 1.5;
+  const pose = Object.assign(walkPose(ph, 4), { aR: [150 + Math.sin(ph) * 8, 168], hR: 'hold' });
+  drawChar(ctx, hx, 606, 38, pose, { who: 'hero', t: a_tw(t), face: 'happy', turn: -.3 });
+  // pozinho de giz saindo da ponta
+  if (r.tip) { for (let i = 0; i < 6; i++) { const u = (t * 2.2 + i / 6) % 1; ctx.fillStyle = `rgba(255,255,255,${.7 * (1 - u)})`; ctx.beginPath(); ctx.arc(r.tip[0] + (i - 3) * 3, r.tip[1] + u * 26, 1.8, 0, TAU); ctx.fill(); } }
+  ctx.restore();
+  // poste em primeiro plano (paralaxe rápida)
+  ctx.save(); ctx.filter = 'blur(3px)'; ctx.fillStyle = 'rgba(14,16,24,.88)'; const fx = lerp(1180, 40, E.io2(k) * 1.0); ctx.fillRect(fx - 26, -20, 52, 760); ctx.restore();
+  fxVignette(ctx, .4, '20,14,26');
+}
+
+/* ============================================================
+   6. SOBREVIVER É OBRIGAÇÃO — obstáculos e placa
+   ============================================================ */
+function a_obstacleRun(ctx, t, L, D) {
+  const k = L / D, scroll = L * 520, hx = 470;
+  ctx.save(); ctx.translate(W / 2, H / 2); const z = lerp(1.0, 1.08, k); ctx.rotate(lerp(.018, -.01, k)); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2 + 6);
+  drawQuebrada(ctx, 300 + scroll, 560, 1, { t, sky: true, kites: true, poles: false });
+  drawBecoGround(ctx, 560, 1, scroll, { puddles: false });
+  // obstáculos (coordenadas de mundo = scroll): poça, fio baixo, degrau
+  const ob = [{ k: 'poca', x: 710 }, { k: 'fio', x: 1120 }, { k: 'deg', x: 1480 }];
+  let jump = 0, duck = 0, jumpU = 0;
+  for (const o of ob) { const sx = o.x - scroll; const d = hx - sx; // d>0: já passou
+    if (o.k === 'poca') { /* poça */ ctx.save(); ctx.fillStyle = 'rgba(120,170,220,.75)'; ctx.beginPath(); ctx.ellipse(sx, 600, 90, 16, 0, 0, TAU); ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(sx, 600, 90 * (1 + .04 * Math.sin(t * 7)), 16, 0, 0, TAU); ctx.stroke(); ctx.restore(); if (Math.abs(d) < 150) { jumpU = (d + 150) / 300; jump = Math.sin(jumpU * Math.PI) * 120; } }
+    if (o.k === 'fio') { ctx.save(); ctx.strokeStyle = '#1a1620'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(sx - 150, 380); ctx.quadraticCurveTo(sx, 470, sx + 150, 380); ctx.stroke(); ctx.fillStyle = '#d8d0c0'; ctx.fillRect(sx - 162, 360, 10, 250); ctx.fillRect(sx + 152, 360, 10, 250); ctx.restore(); if (Math.abs(d) < 130) duck = Math.cos((d / 130) * Math.PI / 2); }
+    if (o.k === 'deg') { ctx.save(); ctx.fillStyle = '#9a9aa6'; ctx.fillRect(sx - 60, 556, 120, 50); ctx.fillStyle = '#c4c4d0'; ctx.fillRect(sx - 60, 556, 120, 8); ctx.strokeStyle = '#3a3a48'; ctx.lineWidth = 3; ctx.strokeRect(sx - 60, 556, 120, 50); ctx.restore(); if (Math.abs(d) < 130) { const u = (d + 130) / 260; jump = Math.sin(u * Math.PI) * 110 + 50 * (u > .5 ? 1 : 0) * 0; jumpU = u; } }
+  }
+  const ph = a_tw(t) * TAU * 2.4;
+  let pose = runPose(ph, 18);
+  if (jump > 4) pose = lerpPose(runPose(ph, 12), { lean: 14, head: -8, spread: .2, hs: .15, aR: [-80, -40], aL: [60, 90], lR: [60, -50], lL: [20, -100], hR: 'fist', hL: 'fist' }, .85);
+  if (duck > .1) pose = lerpPose(runPose(ph, 18), { lean: 34, head: 14, spread: .2, hs: .15, aR: [-30, 60], aL: [30, 80], lR: [40, -75], lL: [-20, -50], hR: 'fist', hL: 'fist' }, duck * .9);
+  const bounce = Math.abs(Math.sin(ph)) * 4;
+  drawChar(ctx, hx, 606 - jump - bounce * 0, 44, pose, { who: 'hero', t: a_tw(t), face: 'determined', autoBlink: false, scar: 0 });
+  // poeira e linhas de velocidade
+  parallelLines(ctx, 0, t, { n: 14, a: .22, col: '#fff' });
+  ctx.restore();
+  fxVignette(ctx, .4, '26,10,30');
+}
+function a_signShot(ctx, t, L, D) {
+  const k = L / D, tFlip = 19.0, f = seg(t, tFlip - .02, tFlip + .14), flipA = E.io2(f) * Math.PI, face = flipA > Math.PI / 2;
+  ctx.save(); ctx.translate(W / 2, H / 2); const z = lerp(1.0, 1.22, E.io2(k)); ctx.rotate(lerp(-.015, .01, k)); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2);
+  fxConcrete(ctx, 0, 0, W, 590, { tone: 'day', seed: 31, light: .7, side: 'right', vig: .3, shade: .2, clean: true });
+  ctx.fillStyle = '#5c5a62'; ctx.fillRect(0, 590, W, H - 590); ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(0, 590, W, 3);
+  // placa pendurada por correntes de um fio
+  const sx = 760, sy = 150 + Math.sin(t * 2.4) * 3;
+  ctx.strokeStyle = '#1a1620'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(300, 78); ctx.quadraticCurveTo(760, 110, 1220, 70); ctx.stroke();
+  ctx.save(); ctx.translate(sx, sy); const cs = Math.cos(flipA); ctx.rotate(Math.sin(t * 2.4) * .02);
+  ctx.strokeStyle = '#3a3640'; ctx.lineWidth = 4; for (const sg of [-1, 1]) { ctx.beginPath(); ctx.moveTo(sg * 140, -52); ctx.lineTo(sg * 150 * Math.abs(cs), 0); ctx.stroke(); }
+  ctx.scale(Math.max(.04, Math.abs(cs)), 1);
+  if (!face) { // frente: VITÓRIA com troféu
+    rrect(ctx, -170, 0, 340, 200, 18); ctx.fillStyle = lg(ctx, 0, 0, 0, 200, [[0, '#fff0a8'], [1, '#f3c13a']]); ctx.fill(); ctx.strokeStyle = '#7a5410'; ctx.lineWidth = 6; ctx.stroke();
+    // troféu
+    ctx.fillStyle = '#ffd23a'; ctx.strokeStyle = '#7a5410'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-34, 20); ctx.lineTo(34, 20); ctx.quadraticCurveTo(30, 70, 0, 78); ctx.quadraticCurveTo(-30, 70, -34, 20); ctx.fill(); ctx.stroke(); ctx.fillRect(-6, 78, 12, 20); ctx.fillRect(-26, 98, 52, 12); ctx.strokeRect(-26, 98, 52, 12);
+    ctx.beginPath(); ctx.arc(-38, 36, 14, Math.PI * .5, Math.PI * 1.5); ctx.arc(38, 36, 14, -Math.PI * .5, Math.PI * .5); ctx.stroke();
+    sparkle(ctx, 0, 44, 12, 0, '#fff8d8');
+    ctx.font = `46px ${FONTS.fat || FONTS.comic}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 7; ctx.strokeStyle = '#7a5410'; ctx.strokeText('VITÓRIA', 0, 150); ctx.fillStyle = '#fffbe8'; ctx.fillText('VITÓRIA', 0, 150);
+  } else { ctx.scale(-1, 1); // verso: OBRIGAÇÃO, placa de aviso cinza com correntes
+    rrect(ctx, -170, 0, 340, 200, 18); ctx.fillStyle = lg(ctx, 0, 0, 0, 200, [[0, '#59606e'], [1, '#2f3440']]); ctx.fill(); ctx.strokeStyle = '#14161c'; ctx.lineWidth = 6; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,214,90,.9)'; ctx.lineWidth = 4; ctx.setLineDash([16, 10]); rrect(ctx, -154, 14, 308, 172, 12); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#ffc24d'; ctx.beginPath(); ctx.moveTo(0, 26); ctx.lineTo(26, 70); ctx.lineTo(-26, 70); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#2f3440'; ctx.font = `30px ${FONTS.comic}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('!', 0, 55);
+    ctx.font = `44px ${FONTS.fat || FONTS.comic}`; ctx.lineWidth = 7; ctx.strokeStyle = '#14161c'; ctx.strokeText('OBRIGAÇÃO', 0, 134); ctx.fillStyle = '#ffd25a'; ctx.fillText('OBRIGAÇÃO', 0, 134);
+  }
+  ctx.restore();
+  // menina olhando para a placa, determinada (estado final)
+  const wk = E.out2(seg(L, 0, .55)), hx = lerp(-60, 330, wk);
+  const ph = a_tw(t) * TAU * 1.5, pose = wk < .98 ? walkPose(ph, 8) : POSE.stand;
+  drawChar(ctx, hx, 618, 50, lerpPose(pose, POSE.fist || pose, 0), { who: 'hero', t: a_tw(t), face: t > tFlip ? 'determined' : 'sad', turn: .5, rim: '255,224,170' });
+  ctx.restore();
+  if (f > 0 && f < 1) flash(ctx, .5 * Math.sin(f * Math.PI), '255,240,200');
+  fxDust(ctx, t, { x: 0, y: 0, w: W, h: H, n: 16, col: '255,230,180', a: .5, seed: 12, size: 1.3 });
+  fxVignette(ctx, .45, '24,12,28');
+}
+
+/* ============================================================ LISTA ============================================================ */
 const SCENES_A = [
   { t0: 0, t1: 2.0, name: 'a_crack', fn: (c, t, L, D) => a_crackClose(c, t, L, D) },
   { t0: 2.0, t1: 4.25, name: 'a_road', fn: (c, t, L, D) => a_crackRoad(c, t, L, D) },
   { t0: 4.25, t1: 7.25, name: 'a_map', fn: (c, t, L, D) => a_openMap(c, t, L, D) },
   { t0: 7.25, t1: 9.5, name: 'a_sky', fn: (c, t, L, D) => a_tiltSky(c, t, L, D) },
   { t0: 9.5, t1: 11.3, name: 'a_dawn', fn: (c, t, L, D) => a_dawnWindow(c, t, L, D) },
+  { t0: 11.3, t1: 12.1, name: 'a_clock', fn: (c, t, L, D) => a_roomClock(c, t, L, D) },
+  { t0: 12.1, t1: 13.2, name: 'a_eyes', fn: (c, t, L, D) => a_eyesShot(c, t, L, D) },
+  { t0: 13.2, t1: 13.56, name: 'a_weight', fn: (c, t, L, D) => a_weightShot(c, t, L, D) },
+  { t0: 13.56, t1: 14.1, name: 'a_bills', fn: (c, t, L, D) => a_billsShot(c, t, L, D) },
+  { t0: 14.1, t1: 15.04, name: 'a_fridge', fn: (c, t, L, D) => a_fridgeShot(c, t, L, D) },
+  { t0: 15.04, t1: 16.3, name: 'a_gate', fn: (c, t, L, D) => a_gateShot(c, t, L, D) },
+  { t0: 16.3, t1: 17.6, name: 'a_chalk', fn: (c, t, L, D) => a_chalkShot(c, t, L, D) },
+  { t0: 17.6, t1: 18.4, name: 'a_obst', fn: (c, t, L, D) => a_obstacleRun(c, t, L, D) },
+  { t0: 18.4, t1: 19.36, name: 'a_sign', fn: (c, t, L, D) => a_signShot(c, t, L, D) },
 ];
-globalThis.SCENES_A = SCENES_A;
+const IMPACTS_A = [
+  { t: 4.25, d: .1, type: 'white' }, { t: 11.76, d: .05, type: 'white' }, { t: 13.38, d: .06, type: 'invert' },
+  { t: 14.7, d: .04, type: 'flash' }, { t: 19.0, d: .05, type: 'invert' },
+];
+globalThis.SCENES_A = SCENES_A; globalThis.IMPACTS_A = IMPACTS_A;

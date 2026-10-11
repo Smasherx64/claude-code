@@ -23,12 +23,19 @@ const TAGS = [
   ['(lanterninha da esperança: ligada 🔦)', 'lanterna'], ['cerca? não conheço 🚧➡️🌌', 'cerca'], ['formatura: diploma = cicatrizes 🎓', 'formatura'],
 ];
 const _zone = i => (i % 2 === 0 ? 'bottom' : 'top');
+/* se o karaokê japonês (base) estiver ativo durante a linha, a linha PT vai para o topo */
+function lineZone(line, idx) {
+  const a = line.words[0][1] - .05, b = line.t1 + .45;
+  for (const j of LY_JP) if (j.t0 - .15 < b && j.t1 + .25 > a) return 'top';
+  return _zone(idx);
+}
 
 /* ---------- uma linha da letra em português: palavras pulando uma a uma, com quebra automática ---------- */
 function ptLine(ctx, t, line, idx) {
+  if (idx === LY_PT.length - 1) return; // a última frase ('O seu sonho é real.') é desenhada no cartão final
   const tin = line.words[0][1] - .05, tout = line.t1 + .45;
   if (t < tin || t > tout) return;
-  const baseSize = idx % 5 === 3 ? 64 : 58, maxW = 1140, zone = _zone(idx);
+  const baseSize = idx % 5 === 3 ? 64 : 58, maxW = 1140, zone = lineZone(line, idx);
   // medir e quebrar
   const items = line.words.map(([w, t0]) => {
     const key = w.toLowerCase().replace(/[.,!?…—;:()]/g, ''), em = EMPH[key], size = baseSize * (em ? em[1] : 1), str = w.toUpperCase();
@@ -58,7 +65,7 @@ function ptLine(ctx, t, line, idx) {
 function funTag(ctx, t, line, idx) {
   const tg = TAGS[idx]; if (!tg) return;
   const t0 = line.words[Math.min(2, line.words.length - 1)][1] + .1, t1 = line.t1 + .2; if (t < t0 || t > t1) return;
-  const zone = _zone(idx) === 'bottom' ? 'top' : 'bottom', side = (idx * 37) % 3, x = [330, 640, 950][side], y = zone === 'top' ? 168 : 520;
+  const zone = lineZone(line, idx) === 'bottom' ? 'top' : 'bottom', side = (idx * 37) % 3, x = [330, 640, 950][side], y = zone === 'top' ? 168 : 520;
   tag(ctx, t, t0, t1, tg[0], x, y, { size: 29, rot: ((idx % 3) - 1) * .05, paper: ['#fff8d6', '#ffe3f4', '#e6f6ff', '#e9ffe6'][idx % 4], tape: ['#ff9ac1', '#9aa1ff', '#8ddcff', '#ffd36b'][idx % 4] });
 }
 function kanjiSlam(ctx, t, t0, str, x, y, grad, size = 220, dur = .95) {

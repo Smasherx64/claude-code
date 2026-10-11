@@ -199,7 +199,7 @@ function c_dance(ctx, t, L, D) { // 38.78–40.48: plano aberto, dança, círcul
   floatHearts(ctx, t, 41, 8, { size: 18, a: .9 });
   prismFlare(ctx, tip[0], tip[1], .55 + .25 * b.pulse, .35, t);
   ctx.restore();
-  fxGrade(ctx, 'kawaii', .6); bloom(ctx, .14, 12);
+  fxGrade(ctx, 'kawaii', .4); fxVignette(ctx, .4, '50,16,100'); bloom(ctx, .12, 12);
   if (L < .1) flash(ctx, (1 - L / .1) * .5, '255,240,250');
 }
 function c_faceCU(ctx, t, L, D) { // 40.48–41.23: olhos em estrela (close extremo)
@@ -327,17 +327,17 @@ function c_hero1(ctx, t, L, D) { // 44.3–46.48: ela se vira e estende a mão p
   drawNightSkyPastel(ctx, t);
   const sun = [W / 2, 300];
   rainbow(ctx, W / 2, 560, 600, 150, .55); rainbow(ctx, W / 2, 560, 770, 110, .22);
-  fxGodRays(ctx, sun[0], sun[1], t, { n: 22, len: 1200, a: .26, col: '255,236,200', sp: .08 });
-  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rg(ctx, sun[0], sun[1], 0, 330, [[0, 'rgba(255,255,255,.95)'], [.3, 'rgba(255,225,245,.5)'], [1, 'rgba(255,200,240,0)']]); ctx.fillRect(0, 0, W, H); ctx.restore();
+  fxGodRays(ctx, sun[0], sun[1], t, { n: 22, len: 1200, a: .16, col: '255,236,200', sp: .08 });
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rg(ctx, sun[0], sun[1], 0, 330, [[0, 'rgba(255,255,255,.55)'], [.3, 'rgba(255,225,245,.25)'], [1, 'rgba(255,200,240,0)']]); ctx.fillRect(0, 0, W, H); ctx.restore();
   fxStar8(ctx, sun[0], sun[1], 70 + 10 * b.pulse, { rot: t * .25, glow: 1.2, t, pulse: b.pulse });
-  c_world(ctx, t, 260, fy + 40, 3, { sky: false, wash: .45, fog: 1 });
+  c_world(ctx, t, 260, fy + 40, 3, { sky: false, wash: .45, fog: 1, dark: .6 });
   c_laje(ctx, t, 0, fy, 3);
   c_groundCircle(ctx, W / 2, fy + 14, 300, t * 1.2, .55 + .2 * b.pulse);
   // virar de costas → frente (flip + spin leve)
   const pose = lerpPose({ ...POSE.stand, lean: 2, aR: [20, 10], aL: [-20, -10] }, POSE.pointCam, E.out3(seg(L, .25, .85)));
   pose.aRs = lerp(1, .5, seg(L, .25, .85)); pose.hR = 'cam';
   ctx.save(); ctx.translate(W / 2, fy); ctx.scale(lerp(.5, 1, E.out3(seg(L, 0, .55))), 1); ctx.translate(-W / 2, -fy);
-  wingsAngel(ctx, W / 2, fy - 4.6 * s, s * 1.05, .3 + .3 * Math.sin(t * 3), .85 * seg(L, .3, .8));
+  wingsAngel(ctx, W / 2, fy - 4.6 * s, s * 1.05, .3 + .3 * Math.sin(t * 3), .5 * seg(L, .3, .8));
   c_hero(ctx, W / 2, fy, s, pose, t, { wand: 0, face: { eye: 'happy', mouth: 'smile' } });
   ctx.restore();
   const hp = c_handPt(W / 2, fy, s, pose); const hb = seg(L, .5, 1); glint(ctx, hp[0], hp[1], 40 * hb + 10, t * 3, '#fff');
@@ -345,9 +345,9 @@ function c_hero1(ctx, t, L, D) { // 44.3–46.48: ela se vira e estende a mão p
   shockRing(ctx, hp[0], hp[1], ((t * 1.3) % 1) * 360, 6, (1 - (t * 1.3) % 1) * .6 * hb, .8);
   sakura(ctx, t, 3, 44, { size: 16, wind: 160, fall: 70 }); glitter(ctx, t, 5, 50, 0, 0, W, H, { size: 22 });
   floatHearts(ctx, t, 9, 8, { size: 18, a: .9 });
-  prismFlare(ctx, sun[0], sun[1], .9, .35, t);
+  prismFlare(ctx, sun[0], sun[1], .8, .18, t);
   ctx.restore();
-  fxGrade(ctx, 'kawaii', .4); bloom(ctx, .16, 12);
+  fxGrade(ctx, 'kawaii', .3); fxVignette(ctx, .4, '50,16,100'); bloom(ctx, .12, 12);
   if (L < .1) flash(ctx, (1 - L / .1) * .5, '255,240,250');
 }
 function c_hero2(ctx, t, L, D) { // 46.48–47.8: close — rosto sorrindo + mão estendida enorme para a câmera

@@ -89,7 +89,7 @@ function g_s2(ctx, t, L, D) {
   ctx.save(); cam(ctx, { x: 640, y: 360, z: 1 + .12 * Math.sin(p * 3), r: 0 });
   fxStar8(ctx, 640, 350, lerp(300, 470, p), { t, glow: 1.3, pulse: bt, rot: t * .25 });
   heartCircle(ctx, 640, 365, lerp(120, 360, E.out3(clamp(p * 1.6))), t * 1.4, .75, { kind: 'star' });
-  const e = E.out3(seg(p, 0, .75)), s = lerp(4, 19, e), y = lerp(330, 570, E.out3(p)), pose = lerpPose(POSE.hensUp, POSE.hensPose, E.io2(seg(p, .2, 1)));
+  const e = E.out3(seg(p, 0, .75)), s = lerp(5, 30, e), y = lerp(340, 610, E.out3(p)), pose = lerpPose(POSE.hensUp, POSE.hensPose, E.io2(seg(p, .2, 1)));
   const amt = 1 - seg(p, .25, .7);
   charSilhouette(ctx, 640 + Math.sin(p * 5) * 30 * (1 - p), y, s, pose, { who: 'hero', magical: 1, wand: 1, t: g_pt(t), wind: .8 }, amt, (1 - e) * 14);
   glitter(ctx, t, 21, 36, 240, 80, 800, 520, { size: 18 });
@@ -111,13 +111,13 @@ function g_s3(ctx, t, L, D) {
   g_ringStars(ctx, 640, 380, 400, 130, t, 14, 22, .6, -.25);
   comet(ctx, lerp(1300, -100, p), lerp(60, 330, p), 2.7, 260, 7, .9);
   comet(ctx, lerp(900, -300, (p + .4) % 1), lerp(-40, 260, (p + .4) % 1), 2.7, 200, 5, .7);
-  wingsAngel(ctx, 640, 410, 150, .5 + .5 * Math.sin(tt * 7), .9);
+  wingsAngel(ctx, 640, 440, 190, .5 + .5 * Math.sin(tt * 7), .9);
   const pose = lerpPose(POSE.hensPose, POSE.twirl, E.io2(seg(p, 0, .6)));
-  g_hero(ctx, 640, 590 - 14 * Math.sin(tt * 4), 25, pose, t, { face: 'happy', rot: Math.sin(tt * 3) * .05 });
+  g_hero(ctx, 640, 640 - 14 * Math.sin(tt * 4), 34, pose, t, { face: 'happy', rot: Math.sin(tt * 3) * .05 });
   for (const sd of [-1, 1]) ribbonWave(ctx, 640 + sd * 40, 480, sd > 0 ? .3 : Math.PI - .3, 340, t, 26, 14, '255,156,207', '201,166,255', .8);
   glitter(ctx, t, 31, 40, 100, 60, 1080, 560, { size: 20 });
   sakura(ctx, t, 17, 24, { size: 12, wind: 140, fall: 90 });
-  prismFlare(ctx, 640, 390, .8 + .3 * bt, .55, t);
+  prismFlare(ctx, 640, 300, .7 + .2 * bt, .22, t);
   ctx.restore();
   g_vig(ctx, .32);
 }
@@ -139,10 +139,10 @@ function g_s4(ctx, t, L, D) {
   const p = L / D, e = E.io2(p), bt = g_beat(t);
   g_cosmos(ctx, t, { gold: .6, gy: 300, clouds: true });
   ctx.save(); cam(ctx, { x: 640, y: lerp(60, 330, e), z: lerp(1.45, 1.0, e), r: lerp(.07, -.02, e) });
-  g_festaBG(ctx, t, lerp(-60, 60, p), 600);
+  g_festaBG(ctx, t, lerp(-60, 60, p), 560);
   const anchors = [];
-  for (const q of G_WIDE.slice().sort((a, b) => a.y - b.y)) { g_dance(ctx, q.who, q.x, q.y, q.s, t, q.off, q.style); anchors.push([q.x, q.y - q.s * 5.6]); }
-  const hs = 17, hy = 628;
+  for (const q of G_WIDE.slice().sort((a, b) => a.y - b.y)) { g_dance(ctx, q.who, q.x, q.y - 55, q.s * 1.1, t, q.off, q.style); anchors.push([q.x, q.y - 55 - q.s * 6]); }
+  const hs = 19, hy = 578;
   g_hero(ctx, 640, hy, hs, dancePose(g_pt(t), 0, 1), t, { face: 'happy' });
   anchors.push([640, hy - hs * 5.6]);
   fxGoldNet(ctx, anchors, seg(L, .2, 1.2), t, { hub: [640, hy - hs * 3.6], rings: 2, sag: 18, w: 1.6 });
@@ -157,12 +157,12 @@ function g_s4(ctx, t, L, D) {
 /* ============================================================
    5. grupo médio, câmera orbitando em paralaxe, constelações ligando todos
    ============================================================ */
-const G_MED = [['viz1', 150, 640, 22, 0, 0], ['viz4', 305, 646, 24, .3, 3], ['mae', 470, 650, 29, 0, 1], ['hero', 640, 662, 35, 0, 1], ['irmao', 818, 650, 24, .4, 3], ['viz6', 975, 646, 25, .15, 1], ['viz3', 1125, 640, 22, .5, 2]];
+const G_MED = [['viz1', 150, 612, 22, 0, 0], ['viz4', 305, 618, 24, .3, 3], ['mae', 470, 622, 29, 0, 1], ['hero', 640, 632, 34, 0, 1], ['irmao', 818, 622, 24, .4, 3], ['viz6', 975, 618, 25, .15, 1], ['viz3', 1125, 612, 22, .5, 2]];
 function g_s5(ctx, t, L, D) {
   const p = L / D, bt = g_beat(t), tt = g_pt(t);
   g_cosmos(ctx, t, { gold: .6, gy: 260 });
   ctx.save(); cam(ctx, { x: 640 + lerp(-40, 40, p), y: 360, z: lerp(1.05, 1.18, p), r: lerp(-.05, .05, E.io2(p)) });
-  g_festaBG(ctx, t, lerp(0, 260, p), 640);
+  g_festaBG(ctx, t, lerp(0, 260, p), 590);
   fxLightShafts(ctx, 640, -40, Math.PI / 2, 700, { n: 7, spread: .7, w: 90, a: .1, t });
   const pts = [], edges = [];
   G_MED.forEach((c, i) => {
@@ -237,14 +237,14 @@ function g_s7(ctx, t, L, D) { // 109.30 → 110.88 (tilt-up)
   crescent(ctx, 1000, lerp(-380, 140, e) , 80, -.5, '#fff0b0', 'rgba(255,255,255,.6)', 2); glint(ctx, 1000, lerp(-380, 140, e), 70, t, '#fff');
   for (let i = 0; i < 3; i++) { const u = (t * .35 + i * .33) % 1; comet(ctx, lerp(1300, 200, u) - i * 60, lerp(-350, 400, u) + i * 40, 2.6, 240, 6, .85 * Math.sin(u * Math.PI)); }
   // a constelação sobe e se completa
-  g_figure(ctx, t, 640, 330 + (1 - e) * 760, 440, seg(pr, .15, .92));
+  g_figure(ctx, t, 640, 330 + (1 - e) * 760, 520, seg(pr, .15, .92));
   // grous de luz subindo
   for (let i = 0; i < 7; i++) { const u = ((t * .22 + i / 7) % 1), x = 140 + i * 165 + Math.sin(u * 6 + i) * 40, y = lerp(700, -80, u) - dy * .15; ctx.save(); ctx.globalAlpha = .9 * Math.sin(u * Math.PI); drawCrane(ctx, x, y, .5 + (i % 3) * .15, t * 6 + i, { gold: true, body: '#fff3cf', wing: '#ffe9a8', shade: '#ffd68a', edge: '#b9791c' }); ctx.restore(); }
   // a quebrada desce para fora do quadro
   ctx.save(); ctx.translate(0, dy);
   if (dy < 760) {
-    drawQuebrada(ctx, 60, 600, 3, { t, sky: false, lit: 1 }); drawBecoGround(ctx, 600, 3, 60, {});
-    for (const q of G_WIDE) g_dance(ctx, q.who, q.x, q.y, q.s, t, q.off, q.style, { }); g_hero(ctx, 640, 628, 17, dancePose(g_pt(t), 0, 1), t, { face: 'happy' });
+    drawQuebrada(ctx, 60, 560, 3, { t, sky: false, lit: 1 }); drawBecoGround(ctx, 560, 3, 60, {});
+    for (const q of G_WIDE) g_dance(ctx, q.who, q.x, q.y - 55, q.s * 1.1, t, q.off, q.style, { }); g_hero(ctx, 640, 578, 19, dancePose(g_pt(t), 0, 1), t, { face: 'happy' });
   }
   ctx.restore();
   // luzes (lanternas) acompanham a subida
@@ -261,7 +261,7 @@ function g_s8(ctx, t, L, D) { // 110.88 → 111.76
   ctx.save(); cam(ctx, { x: 640, y: lerp(340, 470, E.io2(p)), z, r: lerp(-.03, .02, p) });
   g_cosmos(ctx, t, { gold: .6, gy: 400, seed: 5 }); ctx.fillStyle = 'rgba(20,10,60,.4)'; ctx.fillRect(-300, -300, W + 600, H + 600);
   crescent(ctx, 1000, 140, 80, -.5, '#fff0b0', 'rgba(255,255,255,.6)', 2);
-  g_figure(ctx, t, 640, 330, 440, 1);
+  g_figure(ctx, t, 640, 330, 520, 1);
   for (let i = 0; i < 2; i++) { const u = (t * .5 + i * .5) % 1; comet(ctx, lerp(1300, 100, u), lerp(-100, 380, u), 2.65, 220, 5, .8 * Math.sin(u * Math.PI)); }
   fxGodRays(ctx, 640, 505, t, { n: 16, a: .22 + .2 * p, sp: .1 });
   const hy = 610, s = 31;
@@ -289,9 +289,9 @@ function g_s9(ctx, t, L, D) { // 111.76 → 112.90
   g_ringStars(ctx, 640, 400, 300, 90, t, 10, 18, -.9, -.4);
   ctx.restore();
   ctx.save(); cam(ctx, { x: 640, y: 360, z: 1 + .02 * bt, r: 0 });
-  const spin = lerp(Math.PI, 0, E.out3(seg(p, 0, .55))), pose = lerpPose(POSE.hensPose, POSE.pointCam, E.io2(seg(p, .3, .8)));
+  const spin = Math.PI * (1 - E.io2(seg(p, .12, .36))), pose = lerpPose(POSE.hensPose, POSE.pointCam, E.io2(seg(p, .3, .8)));
   fxStar8(ctx, 640, 410, 130 + 30 * bt, { t, glow: 1.3, pulse: bt, rays: 0 });
-  g_hero(ctx, 640, 660, 44, pose, t, { face: p < .5 ? 'happy' : 'sing', spin: spin >= Math.PI - .02 ? Math.PI : spin, wand: 0, shadow: false, light: 1 });
+  g_hero(ctx, 640, 660, 44, pose, t, { face: p < .5 ? 'happy' : 'sing', spin, wand: 0, shadow: false, light: 1 });
   glitter(ctx, t, 91, 44, 100, 80, 1080, 560, { size: 22 });
   ctx.restore();
   speedLines(ctx, 640, 400, t, { n: 40, r0: 330, r1: 1000, col: '#fff0d0', a: .4, seed: 9 });
@@ -328,22 +328,22 @@ function g_s10(ctx, t, L, D) { // 112.90 → 114.30
    ============================================================ */
 function g_s11(ctx, t, L, D) { // 114.30 → 115.60
   const p = L / D, bt = g_beat(t), tt = g_pt(t), e = E.io2(p);
-  ctx.save(); cam(ctx, { x: 640, y: 360, z: lerp(1.05, 1.5, e), r: lerp(-.32, .32, e) });
-  g_cosmos(ctx, t, { gold: 1, gy: 330, deep: .5 });
-  fxGodRays(ctx, 640, 330, t, { n: 30, a: .5, sp: .7, len: 1500 });
-  heartCircle(ctx, 640, 330, 340, t * 1.3, .85, { kind: 'heart' });
-  g_ringStars(ctx, 640, 330, 460, 160, t, 18, 26, .8, -.3);
-  // quebrada minúscula lá embaixo com fios de luz subindo
-  const base = 760;
-  for (let i = 0; i < 9; i++) { const x = 140 + i * 125; fxThread(ctx, x, base - 40, 640, 400, { p: 1, sag: -30, w: 1.3, t: t + i, sway: 6, col: g_GOLD }); }
-  drawQuebrada(ctx, 0, base, 3, { t, sky: false, lit: 1 });
-  g_hero(ctx, 640, 505 + 8 * Math.sin(tt * 3.5), 30, lerpPose(POSE.cheer, POSE.hensUp, .6 + .4 * Math.sin(tt * 3)), t, { face: 'happy', wand: 1, rot: Math.sin(tt * 1.5) * .08 });
-  wingsAngel(ctx, 640, 440, 190, .5 + .5 * Math.sin(tt * 6), .85);
-  for (let i = 0; i < 5; i++) { const u = (t * .5 + i * .2) % 1; comet(ctx, lerp(-100, 1400, u), lerp(500, -50, u) + i * 40, -.9, 200, 5, .6); }
-  glitter(ctx, t, 95, 50, -100, -50, 1480, 860, { size: 26 });
-  sakura(ctx, t, 18, 26, { size: 14, wind: 200, fall: -60, a: .9 });
+  ctx.save(); cam(ctx, { x: 640, y: 360, z: lerp(1.0, 1.28, e), r: lerp(-.3, .3, e) });
+  g_cosmos(ctx, t, { gold: .9, gy: 330, deep: .55 });
+  fxGodRays(ctx, 640, 340, t, { n: 26, a: .3, sp: .7, len: 1500 });
+  heartCircle(ctx, 640, 350, 360, t * 1.3, .8, { kind: 'heart' });
+  g_ringStars(ctx, 640, 350, 480, 170, t, 18, 26, .8, -.3);
+  g_ringStars(ctx, 640, 350, 330, 100, t, 12, 18, -1, .3);
+  // fios de luz subindo da quebrada (luzes lá embaixo) até a mão dela
+  for (let i = 0; i < 11; i++) { const x = 40 + i * 120; fxThread(ctx, x, 800, 640 + (x - 640) * .12, 470, { p: 1, sag: -50, w: 1.5, t: t + i, sway: 8, col: g_GOLD }); }
+  for (let i = 0; i < 14; i++) { const x = 40 + i * 92; ctx.fillStyle = `rgba(255,${200 + (i % 3) * 20},${150 + (i % 4) * 25},.95)`; ctx.globalAlpha = .6 + .4 * Math.sin(t * 3 + i); ctx.beginPath(); ctx.arc(x, 770 - (i % 2) * 20, 5, 0, TAU); ctx.fill(); ctx.globalAlpha = 1; }
+  wingsAngel(ctx, 640, 410, 210, .5 + .5 * Math.sin(tt * 6), .9);
+  g_hero(ctx, 640, 545 + 8 * Math.sin(tt * 3.5), 38, lerpPose(POSE.cheer, POSE.hensUp, .6 + .4 * Math.sin(tt * 3)), t, { face: 'happy', wand: 1, rot: Math.sin(tt * 1.5) * .07, shadow: false });
+  for (let i = 0; i < 4; i++) { const u = (t * .5 + i * .25) % 1; comet(ctx, lerp(-100, 1400, u), lerp(560, -50, u) + i * 40, -.8, 200, 5, .6); }
+  glitter(ctx, t, 95, 46, -100, -50, 1480, 860, { size: 26 });
+  sakura(ctx, t, 18, 22, { size: 14, wind: 200, fall: -60, a: .9 });
   ctx.restore();
-  prismFlare(ctx, 640, 330, 1 + .4 * p, .35 + .3 * p, t);
+  prismFlare(ctx, 640, 260, .8 + .5 * p, .25 + .25 * p, t);
   g_vig(ctx, .3, '60,20,100');
 }
 
@@ -351,24 +351,24 @@ function g_s11(ctx, t, L, D) { // 114.30 → 115.60
    12. CLÍMAX D — a mão estendida; a luz cresce ao máximo; recolhe em 116.8
    ============================================================ */
 function g_s12(ctx, t, L, D) { // 115.60 → 116.85
-  const p = L / D, bt = g_beat(t), tt = g_pt(t), up = E.in2(seg(L, 0, 1.0)), out = seg(L, 1.0, 1.25);
-  g_cosmos(ctx, t, { gold: 1, gy: 300 });
-  ctx.save(); cam(ctx, { x: 640, y: 360, z: lerp(1.0, 1.18, p), r: lerp(.12, -.08, E.io2(p)) });
-  fxGodRays(ctx, 640, 310, t, { n: 34, a: .4 + .4 * up, sp: .9, len: 1500 });
-  g_ringStars(ctx, 640, 310, 420, 130, t, 16, 24, 1.1, .2);
-  // rosto sorrindo ao fundo (pequeno) + mão enorme em primeiro plano
-  g_hero(ctx, 640, 500, 38, POSE.wave, t, { face: 'happy', wand: 0, shadow: false, scale: 1 });
+  const p = L / D, bt = g_beat(t), tt = g_pt(t), up = E.in3(seg(L, .1, 1.0)), out = seg(L, 1.0, 1.25);
+  g_cosmos(ctx, t, { gold: 1, gy: 330 });
+  ctx.save(); cam(ctx, { x: 640, y: 360, z: lerp(1.0, 1.12, p), r: lerp(.1, -.06, E.io2(p)) });
+  fxGodRays(ctx, 640, 340, t, { n: 32, a: .3 + .35 * up, sp: .9, len: 1500 });
+  g_ringStars(ctx, 640, 340, 430, 140, t, 16, 24, 1.1, .2);
+  g_hero(ctx, 400, 650, 46, POSE.pointCam, t, { face: 'happy', wand: 0, shadow: false });
   ctx.restore();
-  const hs = lerp(2.6, 3.4, E.out3(seg(p, 0, .6))), hx = 640 + Math.sin(t * 1.7) * 6, hyy = lerp(900, 800, E.out3(seg(p, 0, .5)));
-  ctx.save(); ctx.globalAlpha = .95; bigHand(ctx, hx, hyy, hs, .06 * Math.sin(t * 2), 0, { col: '#fde2d4', ol: '#a85a78', sh: '#f2b9b0', cuff: '#fff3f8' }); ctx.restore();
-  fxStar8(ctx, hx, hyy - hs * 120 - 20, 70 + 40 * up, { t, glow: 1.6, pulse: bt });
-  glitter(ctx, t, 97, 60, 0, 0, W, H, { size: 28 });
-  prismFlare(ctx, 640, 320, 1.2 + 1.4 * up, .6 + .4 * up, t);
-  fxGodRays(ctx, 640, 320, t * 1.5, { n: 18, a: .35 * up, len: 1700, col: '255,244,225', sp: -.6 });
-  shockRing(ctx, 640, 320, 100 + 1000 * E.out3(seg(L, .45, 1.1)), 18, .6 * (1 - seg(L, .45, 1.1)), .9);
+  // mão enorme em primeiro plano, esticada para a câmera, estrela-bússola na ponta
+  const hs = lerp(2.3, 2.8, E.out3(seg(p, 0, .7))), hx = lerp(960, 880, E.out3(seg(p, 0, .5))) + Math.sin(t * 1.7) * 5, hyy = lerp(960, 850, E.out3(seg(p, 0, .5))), hr = -.38;
+  ctx.save(); bigHand(ctx, hx, hyy, hs, hr, 0, { col: '#fde2d4', ol: '#a85a78', sh: '#f2b9b0', cuff: '#fff3f8' }); ctx.restore();
+  const tx = hx + Math.sin(-hr) * -1 * 505 * hs / 2.8 * 1, ty = hyy - Math.cos(hr) * 505 * hs / 2.8;
+  fxStar8(ctx, 700, 330, 70 + 60 * up + 14 * bt, { t, glow: 1.6, pulse: bt });
+  glitter(ctx, t, 97, 56, 0, 0, W, H, { size: 28 });
+  prismFlare(ctx, 700, 330, .8 + 1.2 * up, .35 + .5 * up, t);
+  shockRing(ctx, 700, 330, 100 + 1000 * E.out3(seg(L, .4, 1.1)), 18, .6 * (1 - seg(L, .4, 1.1)), .9);
   // luz total
-  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rg(ctx, 640, 320, 0, 160 + 1300 * up, [[0, `rgba(255,252,236,${.95 * up})`], [.6, `rgba(255,230,190,${.55 * up})`], [1, 'rgba(255,214,170,0)']]); ctx.fillRect(0, 0, W, H); ctx.restore();
-  flash(ctx, up * .8 * (1 - out) + .2 * up, '255,248,230');
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rg(ctx, 700, 330, 0, 140 + 1300 * up, [[0, `rgba(255,252,236,${.95 * up})`], [.6, `rgba(255,230,190,${.5 * up})`], [1, 'rgba(255,214,170,0)']]); ctx.fillRect(0, 0, W, H); ctx.restore();
+  flash(ctx, up * .6 * (1 - out), '255,248,230');
   // recolhe (≈116.8): tudo se contrai em um ponto
   if (out > 0) { ctx.save(); ctx.fillStyle = `rgba(8,10,22,${E.out2(out) * .96})`; ctx.fillRect(0, 0, W, H); ctx.restore(); flare(ctx, 640, 330, .5 + .8 * (1 - out), '255,214,150', 1 - out * .6, .6 * (1 - out)); }
 }
@@ -378,10 +378,10 @@ function g_s12(ctx, t, L, D) { // 115.60 → 116.85
    ============================================================ */
 const G_SIL = (() => { let c = null; return () => { if (!c) { c = document.createElement('canvas'); c.width = 520; c.height = 520; } return c; }; })();
 function g_coverHero(ctx, cx, y, s, t, a, lightCol = '255,200,110') {
-  const c = G_SIL(), g = c.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 520, 520);
+  const c = G_SIL(), g = c.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 520, 520);
   g.setTransform(2, 0, 0, 2, 0, 0);
   drawChar(g, 130, 240, s, { ...POSE.stand, aR: [14, 4], aL: [-14, -4] }, { who: 'hero', magical: 1, wand: 0, spin: Math.PI, t: g_pt(t), shadow: false, wind: .4, pendant: 0 });
-  g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(14,12,34,.82)'; g.fillRect(0, 0, 520, 520);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(22,16,44,.74)'; g.fillRect(0, 0, 520, 520);
   g.fillStyle = lg(g, 0, 0, 0, 480, [[0, 'rgba(255,170,90,.38)'], [.6, 'rgba(255,140,80,.0)']]); g.fillRect(0, 0, 520, 520);
   ctx.save(); ctx.globalAlpha = a; ctx.shadowColor = `rgba(${lightCol},.95)`; ctx.shadowBlur = 16; ctx.drawImage(c, 0, 0, 520, 520, cx - 130, y - 240, 260, 260); ctx.shadowBlur = 0; ctx.restore();
 }
