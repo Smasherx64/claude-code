@@ -223,7 +223,7 @@ function b_void(ctx, t, o) {
   const hand = i => {
     const ang = -.3 + i * TAU / N + .22 * Math.sin(i * 2.1), rr = hR * (1 + .06 * Math.sin(t * 1.3 + i * 1.7)) * (1 + .05 * (i % 3)), wx = chest[0] + Math.cos(ang) * rr * .82, wy = chest[1] + Math.sin(ang) * rr;
     const vx = chest[0] - wx, vy = chest[1] - wy, d = Math.hypot(vx, vy) || 1, rot = Math.atan2(vx, -vy) + .06 * Math.sin(t * 2 + i), curl = clamp(o.curl + .08 * Math.sin(t * 3 + i * 2));
-    drawGiantHand(ctx, wx, wy, o.handS * (.85 + .3 * ((i * 37) % 5) / 4), rot, curl, { t, seed: i + 1, arm: 5, alpha: o.handA, rim: { col: '#ff9a6a', dx: -vx / d, dy: -vy / d, a: .5 * (.4 + gl) }, amb: '#2a1020' });
+    drawGiantHand(ctx, wx, wy, o.handS * (.85 + .3 * ((i * 37) % 5) / 4), rot, curl, { t, seed: i + 1, arm: 5, alpha: o.handA, rim: i % 3 === 0 ? { col: '#ff9a6a', dx: -vx / d, dy: -vy / d, a: .5 * (.4 + gl) } : null, amb: '#2a1020' });
   };
   if (o.handA > .01) for (let i = 0; i < N; i++) if (i % 3) hand(i);
   // herói
@@ -282,7 +282,7 @@ function b_s_burst(ctx, t, L, D) {
   } else {
     // amanhecer
     ctx.fillStyle = lg(ctx, 0, -600, 0, 1500, [[0, '#2e3a7a'], [.4, '#c97fa0'], [.62, '#ffb070'], [.74, '#ffe0a0'], [.76, '#3a1e2a'], [1, '#120712']]); ctx.fillRect(-900, -900, 2500, 2800);
-    godRays(ctx, chest[0], chest[1], t * 1.4, { n: 26, len: 3600, a: .7 * (1 - u * .35), col: '255,226,150', w: .5, sp: .05, seed: 4 });
+    godRays(ctx, chest[0], chest[1], t * 1.4, { n: 16, len: 3000, a: .7 * (1 - u * .35), col: '255,226,150', w: .5, sp: .05, seed: 4 });
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rg(ctx, chest[0], chest[1], 0, 700, [[0, 'rgba(255,240,190,.95)'], [.25, 'rgba(255,200,110,.5)'], [1, 'rgba(255,150,60,0)']]); ctx.fillRect(chest[0] - 800, chest[1] - 800, 1600, 1600); ctx.restore();
     drawSun(ctx, chest[0], chest[1] - 30, lerp(30, 120, E.out3(u)), { t, glow: 1.4, rayA: .3, nRays: 22 });
     b_city(ctx, -900, 1600, hy - 8, '#2a1424', .3, 5, t, '#ffd070', 160);
@@ -290,11 +290,11 @@ function b_s_burst(ctx, t, L, D) {
     // mãos queimando e recuando
     const N = 9, k = E.out3(u); for (let i = 0; i < N; i++) {
       const ang = -.3 + i * TAU / N + .22 * Math.sin(i * 2.1), rr = lerp(420, 1300, k) * (1 + .06 * (i % 3)), wx = chest[0] + Math.cos(ang) * rr * .82, wy = chest[1] + Math.sin(ang) * rr;
-      const vx = chest[0] - wx, vy = chest[1] - wy, rot = Math.atan2(vx, -vy) + .5 * k * (i % 2 ? 1 : -1), a = clamp(1 - u * 1.25);
-      if (a > .02) { drawGiantHand(ctx, wx, wy, 78, rot, lerp(1, .1, k), { t, seed: i + 1, arm: 5, alpha: a, rim: { col: '#ffe6a0', dx: -vx / Math.hypot(vx, vy), dy: -vy / Math.hypot(vx, vy), a: 1, w: 2 }, amb: '#ff6a20' });
+      const vx = chest[0] - wx, vy = chest[1] - wy, rot = Math.atan2(vx, -vy) + .5 * k * (i % 2 ? 1 : -1), a = u < .6 ? 1 : 0;
+      if (a > .02) { drawGiantHand(ctx, wx, wy, 78, rot, lerp(1, .1, k), { t, seed: i + 1, arm: 5, alpha: 1, rim: i % 3 === 0 ? { col: '#ffe6a0', dx: -vx / Math.hypot(vx, vy), dy: -vy / Math.hypot(vx, vy), a: 1, w: 2 } : null, amb: '#ff6a20' });
         ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rg(ctx, wx, wy, 0, 190, [[0, `rgba(255,170,60,${.5 * a})`], [1, 'rgba(255,120,30,0)']]); ctx.fillRect(wx - 190, wy - 190, 380, 380); ctx.restore(); }
     }
-    fxParticles(ctx, t, 'embers', { x: -300, y: -100, w: 1000, h: 1000 }, { n: 90, seed: 3, a: 1, speed: 4, clip: false });
+    fxParticles(ctx, t, 'embers', { x: -300, y: -100, w: 1000, h: 1000 }, { n: 50, seed: 3, a: 1, speed: 4, clip: false });
     // herói de pé contra o sol
     const hp = lerpPose(POSE.crouch, POSE.Vup, E.out3(clamp(u * 2)));
     drawHero(ctx, hx, hy, s, hp, { t: b_two(t, 15), glow: 1, rim: [{ col: '#fff0c0', dx: 0, dy: -1, a: 1, w: 1.4 }, { col: '#ffd890', dx: -1, dy: 0, a: .8 }] });
@@ -304,8 +304,8 @@ function b_s_burst(ctx, t, L, D) {
   }
   ctx.restore();
   if (!pre) {
-    fxImpact(ctx, tE, t, { dur: .14, x: W / 2, y: H / 2 - 30 });
-    flash(ctx, .9 * Math.pow(1 - clamp((t - tE - .06) / .2), 2) * (t > tE + .05 ? 1 : 0), '255,238,190');
+    fxImpact(ctx, tE, t, { dur: .1, x: W / 2, y: H / 2 - 30 });
+    flash(ctx, .85 * Math.pow(1 - clamp((t - tE - .04) / .17), 2) * (t > tE + .03 ? 1 : 0), '255,238,190');
     fxSpeed(ctx, t, { kind: 'radial', cx: W / 2, cy: H / 2 - 40, n: 50, col: '#fff3d0', a: .5 * (1 - u), r0: 180, r1: 1000, seed: 3 });
   }
   b_post(ctx, { bloom: pre ? .2 : .32, vig: pre ? .9 : .5 });
@@ -322,7 +322,7 @@ function b_runScene(ctx, t, L, D, P) {
   const ph = (t - B_RUN.t0) * TAU * B_RUN.f, pose = sprintPose(ph);
   ctx.save(); cam(ctx, { x: W / 2 + (P.cx || 0), y: H / 2 + (P.cy || 0), z: P.z, r: P.r });
   drawSky(ctx, 2, t, { hy: gy - 50, sx: P.sunX, glow: 1.3 });
-  drawSun(ctx, P.sunX, P.sunY, P.sunR, { t, glow: 1.5, rayA: .3, nRays: 24 });
+  drawSun(ctx, P.sunX, P.sunY, P.sunR, { t, glow: 1.5, rayA: .3, nRays: 16 });
   fxFlare(ctx, P.sunX, P.sunY, 1.1, { a: .35, col: '255,190,120', streak: .5 });
   drawSkyline(ctx, cx * .9, gy + 10, 2, { t, lit: .95, hillH: 300, camY: 0 });
   drawPoles(ctx, cx * .55, gy, { par: 1, h: 330, flags: true, mood: 2, t, gap: 380, s: .62, sag: 30 });
@@ -348,7 +348,7 @@ function b_runScene(ctx, t, L, D, P) {
   }
   // herói
   const hy = gy + 18, drawH = (c, tt, info) => { const pp = sprintPose((tt - B_RUN.t0) * TAU * B_RUN.f); drawHero(c, hx - (info ? info.k * 22 : 0), hy, s, pp, { t: tt, rim: { col: '#fff0c0', dx: -1, dy: -.5, a: 1 }, flip: false }); };
-  if (P.trail) drawTrail(ctx, drawH, t, P.trail, .028, { a: .5, col: '#ff9a6a', comp: 'lighter' });
+  if (P.trail) drawTrail(ctx, drawH, t, P.trail, .028, { a: .38 });
   drawH(ctx, t, null);
   // pipa subindo
   const hand = charPt(hx, hy, s, pose, 'handR', {}), kq = clamp((t - 33.94) / 3.2), kx = lerp(430, 560, kq) + Math.sin(t * 1.6) * 10, ky = lerp(560, 220, E.out2(kq)) + Math.sin(t * 2.1) * 8;
@@ -365,16 +365,16 @@ function b_s_run1(ctx, t, L, D) {
 }
 function b_s_run2(ctx, t, L, D) {
   const u = L / D, e = E.io2(u);
-  b_runScene(ctx, t, L, D, { gy: 930, s: 78, hx: lerp(290, 300, e), z: lerp(1.12, 1.3, e), r: lerp(.02, -.04, e), cx: lerp(0, 40, e), cy: lerp(-30, -90, e), sunX: lerp(430, 380, e), sunY: 540, sunR: lerp(240, 300, e), trail: 3, dust: 1, speed: .45 });
+  b_runScene(ctx, t, L, D, { gy: 930, s: 78, hx: lerp(290, 300, e), z: lerp(1.12, 1.3, e), r: lerp(.02, -.04, e), cx: lerp(0, 40, e), cy: lerp(-30, -90, e), sunX: lerp(430, 380, e), sunY: 540, sunR: lerp(240, 300, e), trail: 2, dust: 1, speed: .45 });
   b_post(ctx, { grade: 'sunset', ga: .5, bloom: .34, vig: .5 });
 }
 function b_s_run3(ctx, t, L, D) {
   const tX = 36.6, u = L / D, a = t - tX, e = E.out3(u), sh = shakeV(t, 7 * Math.exp(-a * 5), 36, 3);
-  const r = b_runScene(ctx, t, L, D, { gy: 930, s: 78, hx: 300, z: lerp(1.3, 1.05, e) + .06 * Math.exp(-a * 6), r: lerp(-.04, .02, e), cx: 40 * (1 - e) + sh[0], cy: lerp(-90, -30, e) + sh[1], sunX: 380, sunY: 540, sunR: 310, trail: 3, dust: 1.5, speed: .6 });
+  const r = b_runScene(ctx, t, L, D, { gy: 930, s: 78, hx: 300, z: lerp(1.3, 1.05, e) + .06 * Math.exp(-a * 6), r: lerp(-.04, .02, e), cx: 40 * (1 - e) + sh[0], cy: lerp(-90, -30, e) + sh[1], sunX: 380, sunY: 540, sunR: 310, trail: 2, dust: 1.5, speed: .6 });
   const ly = 930 + 18; fxShock(ctx, 300, ly - 120, tX, t, { dur: .5, R: 620, col: '255,226,160', w: 16 });
   fxFlare(ctx, 300, ly - 220, 1.2 * Math.exp(-a * 3) + .4, { a: Math.exp(-a * 3) * .35, col: '255,210,140' });
   fxSpeed(ctx, t, { kind: 'radial', cx: 300, cy: ly - 200, n: 60, col: '#fff3d0', a: .55 * Math.exp(-a * 4), r0: 200, r1: 1000, seed: 11 });
-  flash(ctx, .4 * Math.exp(-a * 14), '255,240,200');
+  flash(ctx, .25 * Math.exp(-a * 14), '255,240,200');
   b_post(ctx, { grade: 'sunset', ga: .5, bloom: .42, vig: .45 });
 }
 

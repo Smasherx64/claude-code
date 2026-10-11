@@ -24,11 +24,20 @@ function a_bgCam(ctx, c, par, zp) {
 }
 function a_cam(ctx, c) { cam(ctx, c); }
 /* herói com contorno de luz "falso" (crisp em qualquer escala): cópia deslocada na cor da luz por baixo */
-function a_rimHero(ctx, x, y, s, pose, o, col, dx, dy) {
-  ctx.save();
-  drawHero(ctx, x + dx, y + dy, s, pose, Object.assign({}, o, { col: col, cap: false, shadow: false, rim: null, pack: o.pack }));
-  ctx.restore();
+function a_rimHero(ctx, x, y, s, pose, o, col, dx, dy, col2, dx2, dy2) {
+  // contorno de luz "falso" e barato: cópias deslocadas na cor da luz por baixo da silhueta
+  const base = Object.assign({}, o, { cap: false, shadow: false, rim: null });
+  if (col2) drawHero(ctx, x + dx2, y + dy2, s, pose, Object.assign({}, base, { col: col2 }));
+  drawHero(ctx, x + dx, y + dy, s, pose, Object.assign({}, base, { col: col }));
   drawHero(ctx, x, y, s, pose, o);
+}
+/* fantasmas baratos (afterimage aditiva): fn(ctx, tt, col) desenha o herói no tempo tt com a cor col */
+function a_ghosts(ctx, t, n, dt, rgb, a0, fn) {
+  for (let k = n; k >= 1; k--) {
+    const a = a0 * Math.pow(1 - (k - 1) / (n + .6), 1.4); if (a < .02) continue;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    fn(ctx, t - k * dt, `rgb(${Math.round(rgb[0] * a)},${Math.round(rgb[1] * a)},${Math.round(rgb[2] * a)})`); ctx.restore();
+  }
 }
 function a_black(ctx, a) { if (a > .003) { ctx.save(); ctx.fillStyle = `rgba(0,0,0,${clamp(a)})`; ctx.fillRect(-50, -50, W + 100, H + 100); ctx.restore(); } }
 function a_streak(ctx, u, x0, y0, x1, y1, a) { // estrela cadente própria
@@ -79,7 +88,7 @@ function a_open(ctx, t, L, D) {
   ctx.save(); a_bgCam(ctx, c, .3, .6);
   drawSky(ctx, 0, t, { hy: 1000, cam: t * 14, stars: 1 });
   a_streak(ctx, (t - .55) / .5, 650, 70, 250, 330, 1);
-  drawSkyline(ctx, (c.x - 360) * 1.6 + t * 4, 1215, 0, { t, lit: .95, hillH: 520, seed: 2 });
+  drawSkyline(ctx, (c.x - 360) * 1.6 + t * 4, 1215, 0, { t, lit: .95, hillH: 520, seed: 2, noLayer: [3, 4, 5] });
   ctx.restore();
   ctx.save(); a_cam(ctx, c);
   const rx = 30 + t * 6;
@@ -91,7 +100,7 @@ function a_open(ctx, t, L, D) {
   const hand = charPt(bx, by, s, pose, 'handR');
   const kx = 585 + Math.sin(t * .9) * 14, ky = 475 + Math.cos(t * 1.1) * 10;
   drawKite(ctx, kx, ky, .8, .35 + Math.sin(t * 1.3) * .08, t, { anchor: { x: hand[0], y: hand[1] }, glow: true, tail: 220 });
-  drawHero(ctx, bx, by, s, pose, { t: q, rim: { col: '#ffb070', dx: -1, a: .55 } });
+  a_rimHero(ctx, bx, by, s, pose, { t: q }, '#ff9a5a', -2, -.6);
   fxParticles(ctx, t, 'fireflies', { x: 0, y: 640, w: W, h: 400 }, { n: 22, seed: 2, a: .9 });
   ctx.restore();
   fxVignette(ctx, .55);
@@ -111,7 +120,7 @@ function a_runBase(ctx, t, o) {
   const mx = o.moon[0] - camX * .012;
   drawMoon(ctx, mx, o.moon[1], o.moon[2], { glow: 1.1 });
   godRays(ctx, mx, o.moon[1], t, { n: 12, len: 1500, a: .06, col: '255,240,210', sp: .02 });
-  drawSkyline(ctx, camX, 1280, o.mood, { t, lit: .85, hillH: 520, seed: 2 });
+  drawSkyline(ctx, camX, 1230, o.mood, { t, lit: .85, hillH: 520, seed: 2, noLayer: [4, 5] });
   drawPoles(ctx, camX * .55, roofY - 60, { t, gap: 380, h: 330, s: .6, par: 1, flags: true, mood: o.mood, col: '#0b0b1e' });
   ctx.restore();
   ctx.save(); a_cam(ctx, c);
@@ -127,8 +136,8 @@ function a_runHero(ctx, t, x, y, s, o) {
   // poeira nos passos
   const f = 2 * 2.45, k0 = Math.floor(t * f);
   for (let k = k0 - 3; k <= k0; k++) { const t0 = k / f; ctx.save(); ctx.translate(-A_V * (t - t0), 0); dustPuff(ctx, x - 20 * s / 60, y, t0, t, { size: s * .36, n: 6, dir: -1, dur: .55, seed: k + 3, a: .4, col: '150,140,190' }); ctx.restore(); }
-  drawTrail(ctx, (g, tt) => drawHero(g, x, y, s, runPose(tt * TAU * 2.45, o.lean, o.amp), { t: tt, shadow: false, cap: A_RED }), t, 3, .045, { a: .28, col: '#8f86ff', comp: 'lighter' });
-  drawHero(ctx, x, y, s, pose, { t: t, rim: [{ col: '#b9a8ff', dx: -1, a: .8 }, { col: '#ffd0a0', dx: 1, dy: -.5, a: .35 }], sweat: o.sweat || 0 });
+  a_ghosts(ctx, t, 3, .05, [150, 140, 255], .5, (g, tt, col) => drawHero(g, x, y, s, runPose(tt * TAU * 2.45, o.lean, o.amp), { t: tt, shadow: false, cap: false, col: col }));
+  a_rimHero(ctx, x, y, s, pose, { t: t, sweat: o.sweat || 0 }, '#b9a8ff', -3, -1, '#ffd0a0', 3, -1.5);
 }
 function a_run1(ctx, t, L, D) {
   const u = L / D, e = E.io2(u);
@@ -183,7 +192,7 @@ function a_leap(ctx, t, L, D) {
   drawMoon(ctx, mx, my, mR, { glow: 1.3 });
   const ap = seg(t, 5.7, 6.3) * (1 - seg(t, 6.9, 7.4));
   godRays(ctx, mx, my, t, { n: 16, len: 1700, a: .05 + .17 * ap, col: '255,236,200', sp: .05 });
-  drawSkyline(ctx, c.x * 1.2, 1300, .2, { t, lit: .9, hillH: 520, seed: 2, camY: (c.y - 800) * .5 });
+  drawSkyline(ctx, c.x * 1.2, 1300, .2, { t, lit: .9, hillH: 520, seed: 2, camY: (c.y - 800) * .5, noLayer: [4, 5] });
   ctx.restore();
   ctx.save(); a_cam(ctx, c);
   // abismo entre as lajes: névoa escura
@@ -192,13 +201,13 @@ function a_leap(ctx, t, L, D) {
   a_bunting(ctx, -30, A_RY - 190, A_G + 30, A_RY - 215, 55, t, 1);
   // tanque / antena nas bordas
   ctx.fillStyle = '#07070f'; ctx.fillRect(-170, A_RY - 130, 12, 108); ctx.fillRect(A_G + 140, A_RY - 160, 10, 138);
-  const st = a_leapState(t), hs = st.mode === 'air' ? { t: t, sx: 1 } : { t: a_t12(t) };
-  const draw = (g, tt, info) => { const q = a_leapState(tt); drawHero(g, q.x, q.y, s, q.pose, { t: tt, shadow: false }); };
+  const st = a_leapState(t);
   if (st.mode === 'air') {
-    drawTrail(ctx, draw, t, 6, .075, { a: .5, col: '#ff9ac8', comp: 'lighter' });
-    drawTrail(ctx, draw, t, 4, .04, { a: .35, col: '#bfe4ff', comp: 'lighter' });
+    const dr = (g, tt, col) => { const q = a_leapState(tt); drawHero(g, q.x, q.y, s, q.pose, { t: tt, shadow: false, cap: false, col: col }); };
+    a_ghosts(ctx, t, 6, .075, [255, 150, 200], .6, dr);
+    a_ghosts(ctx, t, 3, .04, [170, 215, 255], .45, dr);
   }
-  drawHero(ctx, st.x, st.y, s, st.pose, { t: st.mode === 'land' ? a_t12(t) : t, rim: [{ col: '#fff3d0', dx: -1, dy: -.4, a: .9 }, { col: '#8f86ff', dx: 1, dy: .5, a: .4 }] });
+  a_rimHero(ctx, st.x, st.y, s, st.pose, { t: st.mode === 'land' ? a_t12(t) : t }, '#fff3d0', -3, -1.4, '#8f86ff', 3, 1.5);
   // pousada
   dustPuff(ctx, A_G + 10, A_RY, A_T1, t, { size: 46, n: 12, ring: true, dir: 0, dur: 1.1, seed: 4, a: .6, col: '170,160,210' });
   dustPuff(ctx, A_G + 10, A_RY, A_T1, t, { size: 30, n: 7, dir: 1, dur: .9, seed: 9, a: .5, col: '200,190,230' });
@@ -228,7 +237,7 @@ function a_sunSky(ctx, t, c, par) {
   drawSky(ctx, m, t, { hy: 1000, cam: 0 });
   const ra = lerp(.05, .24, seg(t, 8, 11)) * (1 + .6 * seg(t, 12, 13));
   drawSun(ctx, sx, sy, R, { t, glow: 1, rayA: ra, nRays: 18, col: '255,208,150' });
-  drawSkyline(ctx, (c.x - 360) * 1.3 + t * 3, 1270, m, { t, lit: lit, hillH: 500, seed: 2, camY: (c.y - 700) * .4 });
+  drawSkyline(ctx, (c.x - 360) * 1.3 + t * 3, 1270, m, { t, lit: lit, hillH: 500, seed: 2, camY: (c.y - 700) * .4, noLayer: [3, 4, 5] });
   ctx.restore();
   return { m: m, sx: sx, sy: sy, R: R };
 }
@@ -244,7 +253,7 @@ function a_sunA(ctx, t, L, D) {
   const hand = charPt(bx, by, s, pose, 'handR');
   const kx = 540 + Math.sin(t * .9) * 16, ky = 470 + Math.cos(t * 1.1) * 12 - seg(t, 8, 10.5) * 20;
   drawKite(ctx, kx, ky, .9, .3 + Math.sin(t * 1.3) * .08, t, { anchor: { x: hand[0], y: hand[1] }, glow: true, tail: 240 });
-  drawHero(ctx, bx, by, s, pose, { t: q, rim: { col: '#ffd9a0', dx: 1, dy: -.3, a: .95 } });
+  a_rimHero(ctx, bx, by, s, pose, { t: q }, '#ffd9a0', 3, -1);
   fxParticles(ctx, t, 'fireflies', { x: 0, y: 700, w: W, h: 300 }, { n: 14, seed: 5, a: .8 * (1 - seg(t, 8, 10)) });
   fxParticles(ctx, t, 'dust', { x: 0, y: 300, w: W, h: 700 }, { n: 26, seed: 6, a: .7, col: '255,226,180' });
   ctx.restore();
@@ -278,7 +287,7 @@ function a_dawnBG(ctx, t, c, sx, sy, R, a) {
   ctx.save(); a_bgCam(ctx, c, .2, .4);
   drawSky(ctx, 3, t, { hy: 900, cam: 0 });
   drawSun(ctx, sx, sy, R, { t, glow: 1.1, rayA: a, nRays: 20, col: '255,214,160' });
-  drawSkyline(ctx, 0, 1270, 3, { t, lit: .3, hillH: 480, seed: 2, haze: 1.2 });
+  drawSkyline(ctx, 0, 1270, 3, { t, lit: .3, hillH: 480, seed: 2, haze: 1.2, noLayer: [4, 5] });
   ctx.restore();
 }
 function a_closeHead(ctx, t, c, s, hx, hy, sunSY, sunR, o) {
@@ -325,7 +334,7 @@ function a_weight(ctx, t, L, D) { // 15.7 – 16.4 : o dia vira peso
   const c = { x: 360 + sh[0], y: 700 + sh[1], z: lerp(1.35, 1.15, E.out2(seg(t, 15.7, 16.4))), r: lerp(.04, -.015, seg(t, 15.7, 16.4)) };
   ctx.save(); ctx.fillStyle = '#1a1424'; ctx.fillRect(0, 0, W, H);
   ctx.save(); a_bgCam(ctx, c, .25, .5);
-  drawSky(ctx, 3, t, { hy: 900 }); drawSkyline(ctx, 0, 1270, 3, { t, lit: .25, hillH: 480, seed: 2, haze: 1.3 });
+  drawSky(ctx, 3, t, { hy: 900 }); drawSkyline(ctx, 0, 1270, 3, { t, lit: .25, hillH: 480, seed: 2, haze: 1.3, noLayer: [4, 5] });
   ctx.restore();
   ctx.save(); a_cam(ctx, c);
   ctx.fillStyle = lg(ctx, 0, 1000, 0, 1300, [[0, '#2a2036'], [1, '#0a0810']]); ctx.fillRect(-100, 1000, W + 200, 400);
@@ -333,12 +342,12 @@ function a_weight(ctx, t, L, D) { // 15.7 – 16.4 : o dia vira peso
   const crush = lerpPose(POSE.hunch, { lean: 50, head: 38, spread: .7, hs: .4, aR: [34, 20], aL: [-24, -12], lR: [30, -34], lL: [-26, -38], sq: .2 }, ex);
   const pose = lerpPose(POSE.stand, crush, E.in2(seg(t, 15.85, 16.05)));
   // relógio-sol gigante desce sobre os ombros
-  const cy = lerp(-320, 760, E.in3(k)) + (land ? -Math.exp(-tl * 9) * 0 : 0), cR = 235, bounce = land ? Math.sin(tl * 22) * 14 * Math.exp(-tl * 7) : 0;
-  drawHero(ctx, bx, by, s, pose, { t: a_t12(t), rim: { col: '#ffc890', dx: -1, a: .7 } });
+  const cy = lerp(-320, 585, E.in3(k)) + (land ? -Math.exp(-tl * 9) * 0 : 0), cR = 235, bounce = land ? Math.sin(tl * 22) * 14 * Math.exp(-tl * 7) : 0;
   ctx.save(); ctx.translate(0, bounce);
   ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rg(ctx, 360, cy, cR * .8, cR * 2.4, [[0, 'rgba(255,190,110,.5)'], [1, 'rgba(255,190,110,0)']]); ctx.fillRect(360 - cR * 2.4, cy - cR * 2.4, cR * 4.8, cR * 4.8); ctx.globalCompositeOperation = 'source-over';
   drawClock(ctx, 360, cy, cR, 0, { glow: .8, h: .1 + (1 - E.out3(k)) * 2, m: (t - 15.7) * 8, col: '#3a2a3a' });
   ctx.restore();
+  a_rimHero(ctx, bx, by, s, pose, { t: a_t12(t) }, '#ffc890', -3, -1);
   if (land) {
     dustPuff(ctx, 360, by, 15.98, t, { size: 52, n: 14, ring: true, dir: 0, dur: 1, seed: 8, a: .6, col: '220,190,170' });
     fxShock(ctx, 360, by - 10, 15.98, t, { dur: .5, R: 420, w: 30, col: '255,200,150' });
@@ -357,7 +366,7 @@ function a_bills(ctx, t, L, D) { // 16.4 – 17.4
   const c = { x: 360 + sh[0], y: 700 + sh[1], z: lerp(1.0, 1.18, E.io2(clamp(L / D))), r: lerp(-.03, .03, E.io2(clamp(L / D))) };
   ctx.save(); ctx.fillStyle = '#0a0c1a'; ctx.fillRect(0, 0, W, H);
   ctx.save(); a_bgCam(ctx, c, .3, .5);
-  drawSky(ctx, 1, t, { hy: 900, stars: .2 }); drawSkyline(ctx, 0, 1270, 1.2, { t, lit: .5, hillH: 470, seed: 5, haze: 1.2 });
+  drawSky(ctx, 1, t, { hy: 900, stars: .2 }); drawSkyline(ctx, 0, 1270, 1.2, { t, lit: .5, hillH: 470, seed: 5, haze: 1.2, noLayer: [4, 5] });
   ctx.restore();
   ctx.save(); a_cam(ctx, c);
   ctx.fillStyle = lg(ctx, 0, 1000, 0, 1300, [[0, '#1c2038'], [1, '#07080f']]); ctx.fillRect(-100, 1000, W + 200, 400);
@@ -365,7 +374,7 @@ function a_bills(ctx, t, L, D) { // 16.4 – 17.4
   const bx = 360, by = 1000, s = 62, k = E.out2(seg(t, 16.88, 17.1));
   const pose = lerpPose(POSE.slump, POSE.cower, k);
   pose.sq = (pose.sq || 0) + .08 * Math.exp(-Math.max(0, tb) * 6) * (buried ? 1 : 0);
-  drawHero(ctx, bx, by, s, pose, { t: a_t12(t), rim: { col: '#7ab8ff', dx: -1, a: .6 } });
+  a_rimHero(ctx, bx, by, s, pose, { t: a_t12(t) }, '#7ab8ff', -3, -1);
   // monte de boletos até a cintura
   if (t > 16.9) {
     const R = rng(77), n = 70, items = [];
@@ -395,7 +404,7 @@ function a_fridge(ctx, t, L, D) { // 17.4 – 18.9
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rg(ctx, 470, 1010, 20, 460, [[0, `rgba(150,210,255,${.35 * open})`], [1, 'rgba(150,210,255,0)']]); ctx.save(); ctx.translate(470, 1010); ctx.scale(1.4, .3); ctx.translate(-470, -1010); ctx.fillRect(0, 700, 1000, 700); ctx.restore(); ctx.restore();
   // herói pequeno olhando
   const pose = lerpPose(POSE.slump, POSE.lookUp, .5); pose.head = 4; pose.lean = 6;
-  drawHero(ctx, 135, 1010, 60, pose, { t: a_t12(t), rim: { col: '#aee0ff', dx: 1, dy: -.3, a: 1 } });
+  a_rimHero(ctx, 135, 1010, 60, pose, { t: a_t12(t) }, '#aee0ff', 3, -1);
   const fx = 470, fy = 700, fs = 1.18;
   drawFridge(ctx, fx, fy, fs, open, { t: t });
   // "pela metade": a metade esquerda do interior (e da luz) se apaga em 'metade' 18.02 -> 18.32
@@ -425,7 +434,7 @@ function a_street(ctx, t, L, D) { // 18.9 – 20.2
   const z = lerp(1.7, 3.1, u), gy = S.groundY(z), s = 52 / z;
   const hx = 360 + Math.sin(t * 1.6) * 3 * (1 / z), ph = t * 6.2;
   const pose = walkPose(ph, 5); pose.sx = .32;
-  drawHero(ctx, hx, gy, s, pose, { t: t, pack: true, rim: { col: '#fff4d8', dx: 0, dy: -1, a: .8, w: 1.2 }, shadowA: .3 });
+  a_rimHero(ctx, hx, gy, s, pose, { t: t, pack: true, shadowA: .3 }, '#fff4d8', 0, -1.6);
   fxFog(ctx, 440, 760, '230,226,214', .35, t);
   fxLightCone(ctx, 360, 560, Math.PI / 2, 700, 260, '255,244,214', .16);
   ctx.restore();
@@ -440,7 +449,7 @@ function a_wall(ctx, t, L, D) { // 20.2 – 21.6 : portão fechado + muro-lousa,
   ctx.save(); const M = wrMood(5);
   ctx.fillStyle = M.top; ctx.fillRect(0, -700, W, 800);
   ctx.translate(0, 120 * tilt * .5 + 40); drawSky(ctx, 5, t, { hy: 700, stars: 0 });
-  drawSkyline(ctx, sx * .3, 1100, 5, { t, lit: 0, hillH: 420, seed: 9, haze: 1.3, camY: -(640 - c.y) * .3 });
+  drawSkyline(ctx, sx * .3, 1100, 5, { t, lit: 0, hillH: 420, seed: 9, haze: 1.3, camY: -(640 - c.y) * .3, noLayer: [4, 5] });
   ctx.restore();
   ctx.save(); a_cam(ctx, c);
   const top = 450, hh = 620;
@@ -452,7 +461,7 @@ function a_wall(ctx, t, L, D) { // 20.2 – 21.6 : portão fechado + muro-lousa,
   ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(-100, top + hh, W + 200, 3);
   // herói andando de mochila
   const hx = 300, hy = top + hh + 6, s = 58;
-  drawHero(ctx, hx, hy, s, walkPose(t * 6.4, 6), { t: t, pack: true, rim: { col: '#fff4d8', dx: -1, dy: -.4, a: .6 }, shadowA: .5 });
+  a_rimHero(ctx, hx, hy, s, walkPose(t * 6.4, 6), { t: t, pack: true, shadowA: .5 }, '#fff4d8', -2.5, -.8);
   ctx.restore();
   fxVignette(ctx, .45);
   ctx.restore();
@@ -468,7 +477,7 @@ function a_crowd(ctx, t, L, D) {
   ctx.save(); ctx.fillStyle = M.top; ctx.fillRect(0, 0, W, H);
   ctx.save(); a_bgCam(ctx, c, .25, .5);
   drawSky(ctx, 5, t, { hy: 700, stars: 0 });
-  drawSkyline(ctx, camX * .5, 1130, 5, { t, lit: 0, hillH: 430, seed: 9, haze: 1.2 });
+  drawSkyline(ctx, camX * .5, 1130, 5, { t, lit: 0, hillH: 430, seed: 9, haze: 1.2, noLayer: [3, 4, 5] });
   ctx.restore();
   ctx.save(); a_cam(ctx, c);
   // muro com a palavra
@@ -478,7 +487,7 @@ function a_crowd(ctx, t, L, D) {
   const px = ((-camX * .55) % 220 + 220) % 220 - 220; ctx.fillStyle = 'rgba(0,0,0,.12)'; for (let x = px; x < W + 100; x += 220) ctx.fillRect(x, wallTop + 17, 3, gy - wallTop);
   const tx = 360 + (22.9 - t) * 90;
   ctx.save(); ctx.translate(tx, 640); ctx.rotate(-.04);
-  ctx.font = '150px "Permanent Marker", "Bangers", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round';
+  ctx.font = '118px "Permanent Marker", "Bangers", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round';
   ctx.strokeStyle = 'rgba(10,14,30,.55)'; ctx.lineWidth = 14; ctx.strokeText('OBRIGAÇÃO', 4, 6);
   ctx.fillStyle = '#e8f0ff'; ctx.fillText('OBRIGAÇÃO', 0, 0);
   ctx.fillStyle = 'rgba(232,240,255,.9)'; for (let i = 0; i < 6; i++) { const dx = -260 + i * 100 + (i % 2) * 20, dl = 30 + (i * 37) % 60; ctx.fillRect(dx, 12, 6, dl); ctx.beginPath(); ctx.arc(dx + 3, 12 + dl, 5, 0, TAU); ctx.fill(); }
@@ -494,12 +503,12 @@ function a_crowd(ctx, t, L, D) {
   }
   // plano médio (anda junto com a câmera): herói no meio
   const mid = [[70, 'crowd'], [150, 'mae'], [235, 'crowd'], [470, 'old'], [560, 'crowd'], [650, 'adult']];
-  mid.forEach((m, i) => drawSil(ctx, m[0] + Math.sin(t * 1.3 + i) * 5, gy + 4, 39, 'walk', { who: m[1], seed: i * 5 + 1, t: t, walk: 5.5 + (i % 3) * .3, col: '#171c30', amb: cool, ambA: .45, rim: { col: '#aab6d8', dx: -1, a: .35 } }));
-  drawHero(ctx, 360, gy + 6, 44, walkPose(t * 5.9, 6), { t: t, pack: true, rim: { col: '#cfd8f0', dx: -1, dy: -.4, a: .6 } });
+  mid.forEach((m, i) => drawSil(ctx, m[0] + Math.sin(t * 1.3 + i) * 5, gy + 4, 39, 'walk', { who: m[1], seed: i * 5 + 1, t: t, walk: 5.5 + (i % 3) * .3, col: '#171c30', amb: cool, ambA: .45}));
+  a_rimHero(ctx, 360, gy + 6, 44, walkPose(t * 5.9, 6), { t: t, pack: true }, '#cfd8f0', -2, -.8);
   // plano próximo (passa mais devagar que a câmera => desliza para trás)
   [[40, 'crowd'], [330, 'old'], [640, 'mae']].forEach((m, i) => {
     const x = (((m[0] - camX * 1.45) % 980) + 980) % 980 - 130;
-    drawSil(ctx, x, 1215, 70, 'walk', { who: m[1], seed: i * 7 + 20, t: t, walk: 5.3, col: '#0a0d1a', amb: '#26304c', ambA: .5, rim: { col: '#8e9cc4', dx: -1, a: .3 } });
+    drawSil(ctx, x, 1215, 70, 'walk', { who: m[1], seed: i * 7 + 20, t: t, walk: 5.3, col: '#0a0d1a', amb: '#26304c', ambA: .5});
   });
   fxFog(ctx, 880, 1100, '190,200,220', .22, t);
   ctx.restore();
