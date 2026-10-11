@@ -46,7 +46,7 @@
 const WR_TW = 1080, WR_CS = 1.5, WR_N = 6;
 const WR_MOODS = [
   { top: '#04050e', mid: '#10113a', hor: '#2b2468', glow: '#6a4cae', tint: '#1d1b4a', hk: .35, amb: .55, lit: .22, fog: '#2a2468', star: 1, cloud: '#161643', cloudHi: '#4a3f8c', rim: '#8f86ff', ground: '#07070f',
-    win: ['#ffc247', '#ffd98a', '#ffae42', '#fff0c0', '#ffb35a', '#ffe3a0'] },
+    win: ['#ffb43c', '#ffc861', '#ff9d2e', '#ffd98a', '#ff9a4a', '#ffc247'] },
   { top: '#0b0f3c', mid: '#2d3484', hor: '#8a7fd0', glow: '#e99ac0', tint: '#2e2f78', hk: .45, amb: .7, lit: .45, fog: '#5a5aa8', star: .55, cloud: '#33387f', cloudHi: '#c58ac0', rim: '#b9a8ff', ground: '#0a0a1c',
     win: ['#ffc247', '#ffd98a', '#ffae42', '#fff0c0', '#ffb35a', '#ffe3a0'] },
   { top: '#2a1858', mid: '#9a3f80', hor: '#ff9a50', glow: '#ffbf6a', tint: '#7a3a50', hk: .7, amb: .85, lit: .6, fog: '#d8806e', star: .1, cloud: '#8a3f78', cloudHi: '#ffb070', rim: '#ffc890', ground: '#14091c',
@@ -218,7 +218,7 @@ function drawSkyline(ctx, camX, baseY, mood, o = {}) {
     // névoa atmosférica atrás desta camada
     if (i > 0 && fogK > 0) {
       const fy = top - 70, a = clamp((.34 - i * .03) * fogK * hazeK, 0, .9);
-      ctx.fillStyle = lg(ctx, 0, fy, 0, fy + 230, [[0, wrCol(Mo.fog, 0)], [.5, wrCol(Mo.fog, a)], [1, wrCol(Mo.fog, a * .9)]]); ctx.fillRect(0, fy, W, H - fy + 40);
+      ctx.fillStyle = lg(ctx, 0, fy, 0, fy + 230, [[0, wrCol(Mo.fog, 0)], [.5, wrCol(Mo.fog, a)], [1, wrCol(Mo.fog, a * .9)]]); ctx.fillRect(0, fy, W, Math.min(H - fy + 40, 360));
     }
     // brilho urbano sobre o topo
     if (i >= 1 && i <= 4 && lit > .05 && o.glow !== false) {
@@ -330,7 +330,7 @@ function drawMoon(ctx, x, y, R, o = {}) {
   const col = o.col || '255,244,214', g = o.glow == null ? 1 : o.glow, rr = rng((o.seed || 5) * 31 + 2);
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   ctx.fillStyle = rg(ctx, x, y, R * .8, R * 3.6, [[0, `rgba(${col},${.34 * g})`], [.25, `rgba(${col},${.13 * g})`], [.6, `rgba(${col},${.04 * g})`], [1, `rgba(${col},0)`]]); ctx.fillRect(x - R * 3.6, y - R * 3.6, R * 7.2, R * 7.2);
-  ctx.strokeStyle = `rgba(${col},${.07 * g})`; ctx.lineWidth = R * .05; ctx.beginPath(); ctx.arc(x, y, R * 1.5, 0, TAU); ctx.stroke(); ctx.lineWidth = R * .02; ctx.beginPath(); ctx.arc(x, y, R * 1.9, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = `rgba(${col},${.035 * g})`; ctx.lineWidth = R * .04; ctx.beginPath(); ctx.arc(x, y, R * 1.5, 0, TAU); ctx.stroke();
   ctx.restore(); ctx.save();
   ctx.beginPath(); ctx.arc(x, y, R, 0, TAU); ctx.clip();
   ctx.fillStyle = lg(ctx, x - R, y - R, x + R, y + R, [[0, '#fffdf0'], [.6, '#f6ecd0'], [1, '#e2d4ae']]); ctx.fillRect(x - R, y - R, R * 2, R * 2);
@@ -338,7 +338,7 @@ function drawMoon(ctx, x, y, R, o = {}) {
   for (let i = 0; i < 4; i++) { const a = rr() * TAU, d = R * (.15 + rr() * .5), px = x + Math.cos(a) * d, py = y + Math.sin(a) * d, r = R * (.25 + rr() * .25); ctx.fillStyle = rg(ctx, px, py, 0, r, [[0, 'rgba(176,160,120,.26)'], [1, 'rgba(176,160,120,0)']]); ctx.fillRect(px - r, py - r, r * 2, r * 2); }
   for (let i = 0; i < 9; i++) {
     const a = rr() * TAU, d = Math.sqrt(rr()) * R * .78, px = x + Math.cos(a) * d, py = y + Math.sin(a) * d, r = R * (.05 + rr() * .13);
-    ctx.fillStyle = 'rgba(150,132,100,.3)'; ctx.beginPath(); ctx.arc(px, py, r, 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(140,122,92,.42)'; ctx.beginPath(); ctx.arc(px, py, r, 0, TAU); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,250,.5)'; ctx.beginPath(); ctx.arc(px - r * .16, py - r * .2, r * .86, 0, TAU); ctx.arc(px, py, r * .86, 0, TAU, true); ctx.fill('evenodd');
     ctx.fillStyle = 'rgba(120,104,78,.22)'; ctx.beginPath(); ctx.arc(px + r * .1, py + r * .12, r * .78, 0, TAU); ctx.fill();
   }
@@ -347,7 +347,7 @@ function drawMoon(ctx, x, y, R, o = {}) {
   ctx.restore();
 }
 function godRays(ctx, x, y, t, o = {}) {
-  const n = o.n || 16, len = o.len || 1900, a = o.a == null ? .16 : o.a, col = o.col || '255,214,160', sp = o.sp == null ? .03 : o.sp, w = o.w == null ? .5 : o.w;
+  const n = o.n || 14, len = o.len || 1900, a = o.a == null ? .16 : o.a, col = o.col || '255,214,160', sp = o.sp == null ? .03 : o.sp, w = o.w == null ? .5 : o.w;
   const a0 = o.a0 == null ? 0 : o.a0, a1 = o.a1 == null ? TAU : o.a1, span = a1 - a0, R = rng((o.seed || 1) * 13 + 9);
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   const gr = rg(ctx, x, y, 0, len, [[0, `rgba(${col},${a})`], [.3, `rgba(${col},${a * .6})`], [.7, `rgba(${col},${a * .2})`], [1, `rgba(${col},0)`]]);

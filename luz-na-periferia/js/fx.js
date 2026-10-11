@@ -37,21 +37,25 @@ function _fxSc(w, h) { const k = w + 'x' + h; if (!_fxS[k]) { const c = document
 
 /* ---------- bloom ---------- */
 function fxBloom(ctx, a = .35, blur = 10) {
-  const cv = ctx.canvas, A = _fxSc(180, 320), B = _fxSc(60, 107), ga = A.getContext('2d'), gb = B.getContext('2d');
+  const cv = ctx.canvas, A = _fxSc(180, 320), B = _fxSc(90, 160), C = _fxSc(91, 161), D = _fxSc(30, 53), E2 = _fxSc(31, 54);
+  const ga = A.getContext('2d'), gb = B.getContext('2d'), gc = C.getContext('2d'), gd = D.getContext('2d'), ge = E2.getContext('2d');
   ga.save(); ga.clearRect(0, 0, 180, 320); ga.filter = 'contrast(2.6) brightness(.58) saturate(1.35)'; ga.drawImage(cv, 0, 0, cv.width, cv.height, 0, 0, 180, 320); ga.restore();
-  gb.clearRect(0, 0, 60, 107); gb.drawImage(A, 0, 0, 180, 320, 0, 0, 60, 107);
-  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'lighter'; const k = cv.width / 720;
-  ctx.globalAlpha = a; ctx.filter = `blur(${blur * k}px)`; ctx.drawImage(A, 0, 0, 180, 320, 0, 0, cv.width, cv.height);
-  ctx.globalAlpha = a * .8; ctx.filter = `blur(${blur * 3.2 * k}px)`; ctx.drawImage(B, 0, 0, 60, 107, 0, 0, cv.width, cv.height);
+  gb.clearRect(0, 0, 90, 160); gb.drawImage(A, 0, 0, 180, 320, 0, 0, 90, 160);
+  gc.save(); gc.clearRect(0, 0, 91, 161); gc.filter = `blur(${Math.max(.4, blur / 8)}px)`; gc.drawImage(B, 0, 0); gc.restore();
+  gd.clearRect(0, 0, 30, 53); gd.drawImage(B, 0, 0, 90, 160, 0, 0, 30, 53);
+  ge.save(); ge.clearRect(0, 0, 31, 54); ge.filter = `blur(${Math.max(.4, blur / 10)}px)`; ge.drawImage(D, 0, 0); ge.restore();
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'lighter'; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'low';
+  ctx.globalAlpha = a; ctx.drawImage(C, 0, 0, 90, 160, 0, 0, cv.width, cv.height);
+  ctx.globalAlpha = a * .9; ctx.drawImage(E2, 0, 0, 30, 53, 0, 0, cv.width, cv.height);
   ctx.restore();
 }
 
 /* ---------- color grade ---------- */
 const FX_GRADES = {
-  night: [['multiply', ['#8f9be0', '#5a64b0'], .7], ['screen', ['#10103a', '#1a1a50'], .22], ['soft-light', ['#3a4aff', '#101060'], .4]],
-  dusk: [['multiply', ['#cdb0ff', '#ffc8a8'], .55], ['soft-light', ['#7a4aff', '#ff8a50'], .5], ['screen', ['#1a0a30', '#301030'], .12]],
-  sunset: [['multiply', ['#ffd8b8', '#ffb590'], .5], ['soft-light', ['#ff9a50', '#ff5a8a'], .6], ['screen', ['#401030', '#601838'], .16]],
-  neon: [['soft-light', ['#ff4fd8', '#35d6ff'], .6], ['screen', ['#2a0a5a', '#4a0a6a'], .14], ['multiply', ['#ffe6ff', '#e6f2ff'], .18]],
+  night: [['multiply', ['#8f9be0', '#5a64b0'], .7], ['screen', ['#10103a', '#1a1a50'], .22]],
+  dusk: [['multiply', ['#cdb0ff', '#ffc8a8'], .55], ['soft-light', ['#7a4aff', '#ff8a50'], .5]],
+  sunset: [['multiply', ['#ffd8b8', '#ffb590'], .5], ['soft-light', ['#ff9a50', '#ff5a8a'], .6]],
+  neon: [['soft-light', ['#ff4fd8', '#35d6ff'], .6], ['multiply', ['#ffe6ff', '#e6f2ff'], .18]],
   gray: [['saturation', ['#808080', '#808080'], .72], ['multiply', ['#dfe3ea', '#c8ccd4'], .45]],
   warm: [['multiply', ['#fff2dc', '#ffdcb4'], .5], ['soft-light', ['#ffb050', '#ff7a40'], .35]],
 };
