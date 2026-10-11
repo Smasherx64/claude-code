@@ -60,8 +60,8 @@ function henshin(ctx, t, L, b, y0) {
   } else kawaiiWorld(ctx, t, camX, y0);
   // dimensão da transformação
   if (dim > .01) {
-    ctx.save(); ctx.globalAlpha = dim; kawaiiSky(ctx, t, { top: '#6a3fd0', mid: '#d94fa8', bot: '#4f9be8', gy: 360, neb: .7 });
-    pastelRays(ctx, cx, 380, t * 2, .22, 18, 1300);
+    ctx.save(); ctx.globalAlpha = dim; kawaiiSky(ctx, t, { top: '#3d24a8', mid: '#a8348f', bot: '#2f6fc8', gy: 380, neb: .8 });
+    pastelRays(ctx, cx, 380, t * 2, .14, 18, 1300);
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = holoGrad(ctx, cx, 380, t * 2, .1); ctx.fillRect(0, 0, W, H); ctx.restore();
     heartCircle(ctx, cx, 360, 330 * E.back(seg(L, .3, .5)), t * 2.5, .9);
     bubbles(ctx, t, 5, 10, { rMin: 8, rMax: 28 }); glitter(ctx, t * 1.5, 11, 40, 0, 0, W, H, { size: 20 });
@@ -81,10 +81,10 @@ function henshin(ctx, t, L, b, y0) {
   const lift = pose.air * 2 * s, yb = fy - lift, yt = yb - 9.2 * s, hg = seg(L, .3, .55), un = seg(L, .75, 1.05);
   const rib = [['255,140,200', '255,230,250'], ['190,160,255', '255,220,250'], ['150,225,255', '230,250,255'], ['255,225,150', '255,250,230']];
   const showRib = L > .3 && L < 1.05;
-  if (showRib) rib.forEach((c, i) => ribbonHelix(ctx, cx, yb + 20, yt, (150 + un * 260) * (1 - .0 * i), 2.4, i * TAU / 4 + t * 7, 15 * (1 - un * .5), c[0], c[1], 'back', 1 - un, E.out2(hg)));
+  if (showRib) rib.forEach((c, i) => ribbonHelix(ctx, cx, yb + 20, yt, (150 + un * 260) * (1 - .0 * i), 2.4, i * TAU / 4 + t * 7, 12 * (1 - un * .5), c[0], c[1], 'back', .85 * (1 - un), E.out2(hg)));
   if (L >= .3 && L < .78) charSilhouette(ctx, cx, fy, s, pose, { magical: m, wand: wand, t: Math.floor(t * 12) / 12, wind: 2, scarfLen: 4, hair: 0, face: { eye: 'happy', mouth: 'grin' } }, sstep(.3, .4, L) * (1 - sstep(.62, .78, L)), E.out2(seg(L, .3, .76)) * TAU * 3);
   else heroDraw(ctx, cx, fy, s, pose, t, { magical: L < .3 ? 0 : 1, wand: L < .3 ? 0 : 1, wings: L > .78, wingA: seg(L, .78, 1.0), face: { eye: 'happy', mouth: 'grin' } });
-  if (showRib) rib.forEach((c, i) => ribbonHelix(ctx, cx, yb + 20, yt, (150 + un * 260), 2.4, i * TAU / 4 + t * 7, 15 * (1 - un * .5), c[0], c[1], 'front', 1 - un, E.out2(hg)));
+  if (showRib) rib.forEach((c, i) => ribbonHelix(ctx, cx, yb + 20, yt, (150 + un * 260), 2.4, i * TAU / 4 + t * 7, 12 * (1 - un * .5), c[0], c[1], 'front', .85 * (1 - un), E.out2(hg)));
   // órbita de corações e estrelas
   if (L > .3 && L < 1.0) for (let i = 0; i < 12; i++) { const an = t * 5 + i / 12 * TAU, rr = 230 + 40 * Math.sin(i), px = cx + Math.cos(an) * rr, py = (yb + yt) / 2 + Math.sin(an) * rr * .35 - (i % 4) * 30; ctx.globalAlpha = hg * (1 - un); if (i % 2) heartShape(ctx, px, py, 14, an, PST_LIST[i % 4], '#fff', 2); else starShape5(ctx, px, py, 16, an, PST_LIST[(i + 1) % 6], '#fff', 2); ctx.globalAlpha = 1; }
   // estouro da transformação na batida (L=.75)
@@ -175,7 +175,7 @@ function sceneMagic(ctx, t, L, D) {
     kawaiiSky(ctx, t, { top: '#a58cff', mid: '#ff9fd6', bot: '#9fdcff', z: 1.8, ox: 100 });
     pastelRays(ctx, W / 2, H / 2, t, .25, 16);
     const Sx = 285, ey = H / 2 + 10;
-    eyesCU(ctx, W / 2, ey, Sx, { open: 1, brow: .4, look: [Math.sin(t * 2) * .5, -.4], iris: .27, pupil: .36, starIris: true, glowIris: .5, t, irisIn: '#ffe6fa', irisMid: '#d78bff', irisOut: '#6a3bc4', skinTop: '#f6b9a4', skin: '#ffd2bf', skinBot: '#f4b6a2', hair: '#2a1a3e' });
+    eyesCU(ctx, W / 2, ey, Sx, { open: 1, brow: .4, look: [Math.sin(t * 2) * .5, -.4], iris: .27, pupil: .36, starIris: true, glowIris: .5, t, irisIn: '#ffe6fa', irisMid: '#d78bff', irisOut: '#6a3bc4', skinTop: '#f7d3c2', skin: '#fde7d9', skinBot: '#f6cdbb', hair: '#2a1a3e' });
     // estrelinhas e corações nas íris
     for (const sg of [-1, 1]) { const ex = W / 2 + sg * .74 * Sx + Math.sin(t * 2) * .5 * .075 * Sx - sg * .015 * Sx, ei = ey + (-.4) * .06 * Sx + .02 * Sx; ctx.save(); ctx.globalCompositeOperation = 'lighter'; for (let i = 0; i < 7; i++) { const a = t * 1.2 + i / 7 * TAU, d = Sx * .1 * (i % 2 ? 1 : .5); starShape5(ctx, ex + Math.cos(a) * d, ei + Math.sin(a) * d, Sx * .028 * (.8 + .4 * Math.sin(t * 8 + i)), a, PST_LIST[i % 6]); } sparkle(ctx, ex, ei, Sx * .12, t * 2, '#fff'); ctx.restore(); }
     fringe(ctx, W / 2, 60, 290, t, '#2a1a4e');
@@ -270,11 +270,11 @@ function sceneFinale(ctx, t, L, D) {
     const kf = seg(t, 27.7, 28.0) * (1 - seg(t, 28.15, 28.4));
     if (kf > 0) { glowKanji(ctx, '夢', W / 2, 340, 760, kf, 0); starBurst(ctx, W / 2, 340, 1 - kf, 20, 3, 600, 26); }
     const pose = { lean: -2, head: 2, spread: .85, hs: .55, aR: [118, 100], aL: [-14, -6], lR: [6, 0], lL: [-6, 0], frontR: true };
-    const hip = 700, hs = 130, fy = hip + skeleton(pose).foot * hs;
-    heroWings(ctx, W / 2 - 80, fy, hs, pose, t, .95, .75);
-    drawChar(ctx, W / 2 - 80, fy, hs, pose, { t: Math.floor(t * 12) / 12, wind: 1.8, scarfLen: 4, shadow: false, hair: 0, magical: 1, wand: 1, face: { eye: 'open', mouth: 'smile', look: [0, 0] } });
-    const hsz = lerp(1.3, 2.6, E.in2(seg(L, .1, 1.5)));
-    bigHand(ctx, 900, 820, hsz, -.5, .05, { cuff: '#ff8fc8' });
+    const hip = 640, hs = 92, fy = hip + skeleton(pose).foot * hs;
+    heroWings(ctx, 330, fy, hs, pose, t, .95, .75);
+    drawChar(ctx, 330, fy, hs, pose, { t: Math.floor(t * 12) / 12, wind: 1.8, scarfLen: 4, shadow: false, hair: 0, magical: 1, wand: 1, face: { eye: 'open', mouth: 'smile', look: [0, 0] } });
+    const hsz = lerp(1.4, 3.0, E.in2(seg(L, .1, 1.5)));
+    bigHand(ctx, lerp(1020, 930, u), lerp(860, 730, u), hsz, -.25, .0, { cuff: '#ff8fc8', col: '#fde7d9' });
     const fp = [900 - Math.sin(.5) * 0, 820 - 100 * hsz]; // aprox. ponta dos dedos
     ctx.save(); ctx.globalAlpha = seg(L, .3, .6); floatHearts(ctx, t, 17, 10, { x0: 640, w: 520, y0: 0, h: 600, size: 22 }); ctx.restore();
     glint(ctx, 840 + u * 40, 330 - u * 10, 70 + 20 * b.pulse, t * 2, '#fff');

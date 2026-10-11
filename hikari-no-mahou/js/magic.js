@@ -239,8 +239,8 @@ function charSilhouette(ctx, x, y, s, pose, o, amt, spin = 0) {
   const g = _sil.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, _sil.width, _sil.height); g.setTransform(K, 0, 0, K, 0, 0);
   drawChar(g, ox, oy, s, pose, { ...o, shadow: false });
   if (amt > 0) { g.globalCompositeOperation = 'source-atop'; g.globalAlpha = amt; g.fillStyle = lg(g, 0, oy - s * 9, 0, oy, [[0, '#ffffff'], [.45, '#ffc2ec'], [1, '#a8dcff']]); g.fillRect(0, 0, w, h); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
-  const sx = Math.max(.1, Math.abs(Math.cos(spin)));
-  ctx.save(); ctx.translate(x, y); ctx.scale(sx, 1); ctx.drawImage(_sil, 0, 0, w * K, h * K, -ox, -oy, w, h); ctx.restore();
+  const sx = Math.max(.38, Math.abs(Math.cos(spin)));
+  ctx.save(); ctx.translate(x, y); ctx.scale(sx, 1); ctx.shadowColor = 'rgba(255,200,240,.95)'; ctx.shadowBlur = amt * 38; ctx.drawImage(_sil, 0, 0, w * K, h * K, -ox, -oy, w, h); ctx.restore();
 }
 
 /* anel de choque pastel */
