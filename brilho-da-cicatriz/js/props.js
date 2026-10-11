@@ -6,7 +6,7 @@
 /* ---------- olhos em close (extreme close-up) — usa o mesmo olho de anime de chars.js (c2eye) ---------- */
 /* cx,cy = ponto entre os olhos; S = escala (olhos a ±0,74·S). Opções: skin/skinTop/skinBot, magical(0..1), open, look[x,y], brow(-1..1),
    irisIn/irisMid/irisOut (compat) ou iris0/iris1, pupil, starIris, glowIris, refl, tear(0..1), hair (sobrancelha), lash(0-2), t, style('open'|'love'|'stars'|'sad'|'determined'|'scared'), blink(0..1), autoBlink */
-function eyesCU(ctx, cx, cy, S, o = {}) {
+function eyesCUFull(ctx, cx, cy, S, o = {}) {
   const t = o.t || 0, m = clamp(o.magical || 0), brow = o.brow || 0;
   const skin = o.skin || mix('#b8754d', '#fdeadf', m), skinSh = o.skinSh || mix('#94583a', '#f1c6bc', m), blush = mix('#d65a4c', '#ff8fae', m);
   const iris0 = o.iris0 || o.irisOut && mix(o.irisOut, '#3a1c10', .0) || mix('#3a1c10', '#5a3bd0', m), iris1 = o.iris1 || o.irisIn || mix('#cf8c48', '#ff9bdc', m);
@@ -35,6 +35,39 @@ function eyesCU(ctx, cx, cy, S, o = {}) {
   ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.beginPath(); ctx.ellipse(cx - S * .02, cy + S * .52, S * .035, S * .025, 0, 0, TAU); ctx.fill();
 }
 /* franja cacheada (bolinhas com contorno colorido e brilho) por cima do close */
+
+/* close de olhos no estilo FLAT (formas chapadas): esclera branca, íris/pupila, sobrancelha grossa, bochechas */
+function eyesCU(ctx, cx, cy, S, o = {}) {
+  if ((o.style2 || CHAR_STYLE) !== 'flat') return eyesCUFull(ctx, cx, cy, S, o);
+  const op = o.open == null ? 1 : o.open, brow = o.brow || 0, t = o.t || 0, mag = clamp(o.magical || 0), st = o.style || 'open';
+  const skin = o.skin || (mag > .5 ? '#fde7d9' : '#b8754d'), skinD = o.skinTop || mix(skin, '#6a2a20', .14), hairC = o.hair || (mag > .5 ? '#ff8fcb' : '#2d1b13');
+  ctx.fillStyle = lg(ctx, 0, cy - S * 1.2, 0, cy + S * 1.2, [[0, skinD], [.5, skin], [1, o.skinBot || mix(skin, '#6a2a20', .08)]]); ctx.fillRect(-100, cy - S * 1.6, W + 200, S * 3.2);
+  ctx.fillStyle = rgba(mix(skin, '#ff4f7a', .45), .5); [-1, 1].forEach(sg => { ctx.beginPath(); ctx.ellipse(cx + sg * 1.25 * S, cy + .5 * S, .3 * S, .17 * S, 0, 0, TAU); ctx.fill(); });
+  const ink = '#2a1a2e';
+  [-1, 1].forEach(sg => {
+    const ex = cx + sg * .74 * S, rx = .36 * S, ry = .27 * S * Math.max(.05, op), lk = o.look || [0, 0];
+    ctx.save(); ctx.beginPath(); ctx.ellipse(ex, cy, rx, ry, 0, 0, TAU); ctx.fillStyle = '#fff'; ctx.fill(); ctx.clip();
+    if (op > .12) {
+      const ix = ex + lk[0] * .1 * S, iy = cy + lk[1] * .06 * S, ir = (o.iris || .21) * S;
+      ctx.fillStyle = o.irisMid || (mag > .5 ? '#a98cff' : '#4a2c1c'); ctx.beginPath(); ctx.arc(ix, iy, ir, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#15081e'; ctx.beginPath(); ctx.arc(ix, iy, ir * (o.pupil == null ? .5 : Math.min(.8, o.pupil * 1.2)), 0, TAU); ctx.fill();
+      if (o.starIris || st === 'stars') { ctx.fillStyle = '#ffe36a'; c2star5(ctx, ix, iy, ir * .75, ir * .32, t * .6 - Math.PI / 2); ctx.fill(); }
+      else if (st === 'love') { ctx.fillStyle = '#ff5f9a'; c2heart(ctx, ix, iy - ir * .05, ir * .7); ctx.fill(); }
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ix - ir * .35, iy - ir * .38, ir * .26, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.arc(ix + ir * .4, iy + ir * .35, ir * .12, 0, TAU); ctx.fill();
+      if (o.refl) { ctx.fillStyle = 'rgba(255,255,255,.7)'; for (let q = 0; q < 3; q++) ctx.fillRect(ix - ir * .6, iy - ir * .7 + q * ir * .17, ir * .55, ir * .07); }
+      if (o.glowIris) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rg(ctx, ix, iy, 0, ir * 1.6, [[0, `rgba(255,210,110,${o.glowIris})`], [1, 'rgba(255,210,110,0)']]); ctx.beginPath(); ctx.arc(ix, iy, ir * 1.6, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
+    }
+    ctx.restore();
+    ctx.strokeStyle = ink; ctx.lineCap = 'round'; ctx.lineWidth = S * .055; ctx.beginPath(); ctx.ellipse(ex, cy, rx, ry, 0, Math.PI * 1.02, Math.PI * 1.98); ctx.stroke();
+    if (op < .5) { ctx.lineWidth = S * .06; ctx.beginPath(); ctx.ellipse(ex, cy, rx, ry, 0, 0, TAU); ctx.stroke(); }
+    // sobrancelha
+    const by = cy - S * (.6 + op * .05 + brow * .08), tilt = (st === 'sad' ? -1 : st === 'determined' || brow < -.3 ? 1 : 0) * .13 * S;
+    ctx.strokeStyle = hairC; ctx.lineWidth = S * .1; ctx.beginPath(); ctx.moveTo(ex - sg * .32 * S, by + tilt); ctx.quadraticCurveTo(ex, by - .08 * S, ex + sg * .4 * S, by - tilt * .4 + .04 * S); ctx.stroke();
+    if (o.tear || st === 'sad') { ctx.fillStyle = '#7fd4ff'; const dy = ((t * 1.1 + (sg > 0 ? .4 : 0)) % 1); ctx.beginPath(); ctx.ellipse(ex + sg * .15 * S, cy + ry + .1 * S + dy * .5 * S, .05 * S, .09 * S, 0, 0, TAU); ctx.fill(); }
+  });
+  ctx.strokeStyle = rgba(mix(skin, '#6a2a20', .5), .6); ctx.lineWidth = S * .04; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx - .06 * S, cy + .55 * S); ctx.quadraticCurveTo(cx, cy + .62 * S, cx + .06 * S, cy + .55 * S); ctx.stroke();
+}
+
 function fringe(ctx, cx, y0, S, t = 0, col = '#2d1b13') {
   const pts = []; for (let i = -9; i <= 9; i++) pts.push([cx + i * S * .27, y0 + (Math.abs(i) % 2 ? .14 : .02) * S + Math.sin(t * 2 + i) * 1.2 + Math.abs(i) * .012 * S, S * (.3 + (Math.abs(i * 7) % 3) * .03)]);
   const ink = mix(col, '#14081a', .55), sh = mix(col, '#0a0414', .45), hi = mix(col, '#ffffff', .42);
