@@ -830,7 +830,7 @@ function drawEmblem(ctx, x, y, R, t, o = {}) {
   // RAIO DOURADO
   if (o.bolt !== false) {
     ctx.rotate(-rot + (o.boltRot == null ? .22 : o.boltRot));
-    const J = o.crackle == null ? 1 : o.crackle, B = [[.30, -.82], [.08, -.46], [.24, -.40], [-.06, -.02], [.12, .06], [-.2, .42], [-.08, .48], [-.34, .86]];
+    const J = o.crackle == null ? 1 : o.crackle, B = [[.15, -.72], [.03, -.42], [.12, -.36], [-.04, -.02], [.07, .05], [-.11, .38], [-.04, .44], [-.17, .76]];
     const rj = rng(Math.floor(t * 14) + 3), pts = B.map(p => [p[0] * R + (rj() - .5) * R * .012 * J, p[1] * R + (rj() - .5) * R * .012 * J]);
     const path = () => { ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); };
     ctx.lineJoin = 'miter'; ctx.miterLimit = 6; ctx.lineCap = 'butt';

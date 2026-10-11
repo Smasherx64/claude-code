@@ -32,11 +32,11 @@ function graffBox(ctx, x0, y0, x1, y1, prog, seed) {
 }
 /* uma linha da letra em PT */
 function ptLine(ctx, t, line, idx) {
-  const tin = line.words[0][1] - .14, tout = line.t1 + .32; if (t < tin || t > tout) return;
+  const tin = line.words[0][1] - .10, tout = line.t1 + .12; if (t < tin || t > tout) return;
   const size = 58, maxW = 600, items = line.words.map(([w, t0]) => { const key = w.toLowerCase().replace(/[.,!?…—;:()]/g, ''), str = w.toUpperCase(); return { str, t0, key, col: KEY[key] || null, w: ovMeasure(ctx, F_SUB(size), str, 1) + 15 }; });
   const rows = [[]]; let cur = 0; items.forEach(it => { if (cur + it.w > maxW && rows[rows.length - 1].length) { rows.push([]); cur = 0; } rows[rows.length - 1].push(it); cur += it.w; });
   const rowH = 66, bw = Math.min(660, Math.max(...rows.map(r => r.reduce((a, b) => a + b.w, 0))) + 84), vis = 1 + rows.slice(1).reduce((a, r) => a + E.out3(seg(t, r[0].t0 - .1, r[0].t0 + .18)), 0), bh = vis * rowH + 40, y1 = 1168, y0 = y1 - bh, cx = W / 2;
-  const fade = 1 - seg(t, line.t1 + .06, tout), pin = E.out5(seg(t, tin, tin + .2)), yo = (1 - pin) * 30;
+  const fade = 1 - seg(t, line.t1 - .04, tout), pin = E.out5(seg(t, tin, tin + .18)), yo = (1 - pin) * 30;
   ctx.save(); ctx.globalAlpha = fade; ctx.translate(0, yo);
   graffBox(ctx, cx - bw / 2, y0, cx + bw / 2, y1, pin, 100 + idx * 13);
   rows.forEach((row, ri) => {

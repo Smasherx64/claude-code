@@ -113,7 +113,7 @@ function d_net(ctx, x, y, s, rot, t, seed, a) { // rede de circo rasgada
   for (let j = 0; j <= rows; j++) { V[j] = []; for (let i = 0; i <= cols; i++) { const wv = Math.sin(t * 2.2 + i * .7 + j * .5) * 7, torn = (i + j * 2 + seed) % 7 === 3 || R() < .08 || (j > 4 && R() < .3); V[j][i] = { x: (i - cols / 2) * 36 + (R() - .5) * 8 + wv, y: (j - rows / 2) * 36 + (R() - .5) * 8 + Math.sin(t * 1.7 + i) * 6 + Math.pow((i - cols / 2) / 5, 2) * 14, ok: !torn }; } }
   ctx.lineCap = 'round';
   const pass = (lw, col) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); for (let j = 0; j <= rows; j++) for (let i = 0; i <= cols; i++) { const p = V[j][i]; if (!p.ok) continue; if (i < cols && V[j][i + 1].ok) { ctx.moveTo(p.x, p.y); ctx.lineTo(V[j][i + 1].x, V[j][i + 1].y); } if (j < rows && V[j + 1][i].ok) { ctx.moveTo(p.x, p.y); ctx.lineTo(V[j + 1][i].x, V[j + 1][i].y); } else if (j < rows && !V[j + 1][i].ok && p.ok) { ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + Math.sin(t * 3 + i) * 6, p.y + 30 + (i % 3) * 12); } } ctx.stroke(); };
-  pass(4.5, 'rgba(30,10,40,.9)'); pass(2.2, 'rgba(255,205,170,.85)');
+  pass(7, 'rgba(30,10,40,.9)'); pass(3.6, 'rgba(255,205,170,.9)');
   ctx.restore();
 }
 
@@ -125,7 +125,7 @@ function d_fadeIn(ctx, L) { // preto rápido → clarão quente → pôr do sol
   const k = 1 - sstep(.0, .3, L); if (k > .004) flash(ctx, k, '4,2,10'); const f = Math.max(0, 1 - Math.abs(L - .34) / .16); if (f > 0 && L > .26) flash(ctx, .28 * f, '255,236,214');
 }
 function d_walkTo(t0, ph0) { return (t0 - ph0) * 9.5; }
-function d_flatShock(ctx, x, y, ti, t, R, col) { ctx.save(); ctx.translate(x, y); ctx.scale(1, .3); fxShock(ctx, 0, 0, ti, t, { R: R || 280, w: 26, dur: .55, col: col || '255,196,150' }); ctx.restore(); }
+function d_flatShock(ctx, x, y, ti, t, R, col) { ctx.save(); ctx.translate(x, y); ctx.scale(1, .24); ctx.globalAlpha = .55; fxShock(ctx, 0, 0, ti, t, { R: (R || 280) * .75, w: 16, dur: .5, col: col || '255,176,140' }); ctx.restore(); }
 
 /* =====================  1) QUEDAS (montagem)  66.7 – 69.42  ===================== */
 function d_fallPoseAt(t, ts, TF, tr, TR, walkPh) {
@@ -161,7 +161,7 @@ function d_s2(ctx, t, L) {
   const bg = d_bg(ctx, t, c, { seed: 8, T: 760 - (c.y - 640) * 1.1 + 160, sx: 560, sy: 470, rayA: .2, beat: beatInfo(t).pulse });
   ctx.save(); cam(ctx, c);
   ctx.fillStyle = '#0d0716'; ctx.fillRect(-500, y0 + 4, 2000, 1400);
-  const steps = drawStairs(ctx, x0, y0, n, { sw, sh, mood: 2, rail: true });
+  const steps = drawStairs(ctx, x0, y0, n, { sw, sh, mood: 2, rail: true, col: '#4a2552' });
   const stp = steps[3], u = clamp((t - ts) / TF), q = d_two(t);
   const hx = stp.x + 20 + 40 * E.out2(u) * (t < ti + .1 ? 1 : 1), hy = stp.y - 64 * (E.in2(u) > .6 ? .5 : 0) * 0;
   const pose = t < ts ? POSE.hunch : (t < 68.3 ? fallPose(u) : lerpPose(fallFlat(), risePose(clamp((q - 68.3) / 1.1)), 1));
@@ -195,11 +195,11 @@ function d_s3(ctx, t, L) {
 /* =====================  2) CORDA BAMBA  69.42 – 72.88  ===================== */
 var D_RY = 600;
 function d_ropeScene(ctx, t, c, o) {
-  const bg = d_bg(ctx, t, c, { seed: 9, T: o.T, sx: o.sx == null ? 90 : o.sx, sy: o.sy, sunR: 58, rayA: .26, hillH: 560, haze: 1.2, beat: beatInfo(t).pulse });
+  const bg = d_bg(ctx, t, c, { seed: 9, T: o.T, sx: o.sx == null ? 90 : o.sx, sy: o.sy, sunR: 58, rayA: .26, hillH: 560, haze: 1.9, beat: beatInfo(t).pulse });
   const v = d_view(c, 1.5);
   ctx.save(); cam(ctx, c);
   // vazio: névoa do abismo entre as torres
-  ctx.fillStyle = lg(ctx, 0, D_RY + 80, 0, D_RY + 1700, [[0, 'rgba(255,150,170,0)'], [.35, 'rgba(190,90,150,.28)'], [1, 'rgba(70,30,90,.9)']]); ctx.fillRect(-200, D_RY + 80, 1120, 2200);
+  ctx.fillStyle = lg(ctx, 0, D_RY + 80, 0, D_RY + 1700, [[0, 'rgba(255,150,170,0)'], [.1, 'rgba(210,110,170,.5)'], [.4, 'rgba(100,44,126,.84)'], [1, 'rgba(36,14,56,.97)']]); ctx.fillRect(-200, D_RY + 80, 1120, 2200);
   if (o.flags !== false) { d_flags(ctx, -60, D_RY - 330, 780, D_RY - 400, 34, t, 2, .75); d_flags(ctx, -60, D_RY - 250, 780, D_RY - 270, 40, t + 2, 5, .6); }
   d_birds(ctx, t, o.birds == null ? 6 : o.birds, 3, { x: -100, y: D_RY - 380, w: 900, h: 300 }, { speed: 55, s: 1.1 });
   if (o.net) { const nt = o.net; d_net(ctx, nt.x, nt.y, nt.s, nt.rot, t, 4, nt.a); }
@@ -217,15 +217,15 @@ function d_ropeScene(ctx, t, c, o) {
 function d_s4a(ctx, t, L) { // 69.42–70.38 plano geral
   const c = d_kf(t, [[69.42, 300, 640, .92, -.05], [70.38, 350, 620, 1.12, .02]]);
   c.x += Math.sin(t * 1.3) * 6; c.y += Math.cos(t * 1.1) * 5;
-  const r = d_ropeScene(ctx, t, c, { T: 1180, s: 36, seed: 2, ghost: false });
+  const r = d_ropeScene(ctx, t, c, { T: 1330, s: 36, seed: 2, ghost: false });
   d_post(ctx, { grade: .35, bloom: .25, vig: .55 });
   fxFlare(ctx, r.bg.sun[0], r.bg.sun[1], .8, { a: .4, ghosts: false, col: '255,170,150' });
 }
 function d_s4b(ctx, t, L) { // 70.38–71.74 tilt para baixo: o vazio, nenhuma rede
   const u = d_ez(seg(t, 70.38, 71.5)), c = d_kf(t, [[70.38, 350, 620, 1.12, .02], [71.0, 360, 900, 1.0, -.03], [71.74, 360, 1180, .9, -.06]]);
-  const nu = seg(t, 70.5, 71.9), net = { x: 300 + nu * 120 + Math.sin(t * 1.4) * 14, y: 1000 + nu * 800, s: lerp(1.5, .7, nu), rot: -.5 + nu * 2.2, a: .95 * (1 - nu * .55) };
+  const nu = seg(t, 70.5, 71.9), net = { x: 300 + nu * 120 + Math.sin(t * 1.4) * 14, y: 1000 + nu * 800, s: lerp(2.3, 1.1, nu), rot: -.5 + nu * 2.2, a: .95 * (1 - nu * .55) };
   c.x += Math.sin(t * 1.3) * 4;
-  const r = d_ropeScene(ctx, t, c, { T: lerp(1180, 640, u), look: -1 * sstep(70.38, 70.65, t), nerv: .8, s: 36, net, seed: 3, birds: 3 });
+  const r = d_ropeScene(ctx, t, c, { T: lerp(1330, 700, u), look: -1 * sstep(70.38, 70.65, t), nerv: .8, s: 36, net, seed: 3, birds: 3 });
   fxFog(ctx, 520, 1180, '120,60,130', .35 * u, t);
   d_post(ctx, { grade: .35, bloom: .2, vig: .62 });
 }
@@ -233,9 +233,8 @@ function d_s4c(ctx, t, L) { // 71.74–72.88 close: pés e braços; em "destino"
   const c = d_kf(t, [[71.74, 350, D_RY - 10, 2.4, .05], [72.3, 352, D_RY - 70, 2.1, .0], [72.88, 360, D_RY - 260, 1.5, -.035]]);
   const sk = shakeV(t, 3, 14, 4); c.x += sk[0]; c.y += sk[1];
   const look = -1 + 2 * sstep(72.38, 72.7, t);
-  const r = d_ropeScene(ctx, t, c, { T: lerp(700, 1000, seg(t, 71.74, 72.88)), look: Math.min(look, 1), nerv: .9, s: 52, seed: 4, birds: 2, vib: 4 * Math.exp(-(t - 71.74) * 2), ghost: true, flags: false });
-  const sl = 1 + 0; d_post(ctx, { grade: .35, bloom: .28, vig: .6 });
-  fxFlare(ctx, r.bg.sun[0], r.bg.sun[1], .7, { a: .3, ghosts: false });
+  const r = d_ropeScene(ctx, t, c, { T: lerp(700, 1000, seg(t, 71.74, 72.88)), look: Math.min(look, 1), nerv: .9, s: 52, seed: 4, birds: 2, vib: 4 * Math.exp(-(t - 71.74) * 2), flags: false });
+  d_post(ctx, { grade: .35, bloom: .28, vig: .6 });
 }
 
 /* =====================  3) SINAL QUE NUNCA VEIO  72.88 – 75.94  ===================== */
@@ -243,15 +242,15 @@ function d_skyVeil(ctx, t, sx, sy, k, emb) {
   drawEmblem(ctx, sx, sy, 50, t, { a: emb, rays: false, flare: false, glow: .35 * emb });
   drawCloudBand(ctx, sy - 30, t, { col: '#9a4a86', hi: '#ffb890', a: .7 * k, speed: 14, scale: 1.9, n: 4, h: 20, seed: 12, sq: .5 });
   drawCloudBand(ctx, sy + 40, t, { col: '#8a3f78', hi: '#ffa890', a: .62 * k, speed: 9, scale: 1.5, n: 4, h: 24, seed: 4, sq: .45 });
-  ctx.save(); ctx.fillStyle = rg(ctx, sx, sy, 20, 190, [[0, 'rgba(255,190,170,' + (.34 * k) + ')'], [1, 'rgba(255,170,170,0)']]); ctx.fillRect(sx - 200, sy - 200, 400, 400); ctx.restore();
+  ctx.save(); ctx.fillStyle = rg(ctx, sx, sy, 10, 150, [[0, 'rgba(240,150,190,' + (.5 * k) + ')'], [.6, 'rgba(240,150,190,' + (.3 * k) + ')'], [1, 'rgba(255,170,170,0)']]); ctx.fillRect(sx - 200, sy - 200, 400, 400); ctx.restore();
 }
 function d_s5a(ctx, t, L) { // 72.88–74.2 contra-plongée: herói alcança o sol velado
-  const sx = 480, sy = 290, c = d_kf(t, [[72.88, 300, 770, 1.1, -.05], [74.2, 330, 700, 1.32, .035]]);
-  const bg = d_bg(ctx, t, c, { seed: 4, T: 1060, sx, sy, sunR: 66, sunGlow: .72, rayA: .2, nRays: 18, after: (g, x, y) => { d_skyVeil(g, t, x, y, 1, .42 * sstep(73.0, 73.9, t)); } });
+  const sx = 480, sy = 290, c = d_kf(t, [[72.88, 300, 800, 1.05, -.05], [74.2, 320, 740, 1.2, .035]]);
+  const bg = d_bg(ctx, t, c, { seed: 4, T: 1060, sx, sy, sunR: 60, sunGlow: .55, rayA: .2, nRays: 18, after: (g, x, y) => { d_skyVeil(g, t, x, y, 1, .5 * sstep(73.0, 73.9, t)); } });
   ctx.save(); cam(ctx, c);
   d_roof(ctx, 960, t, { seed: 13, x0: -300, x1: 1100 });
   const u = d_ez(seg(t, 72.95, 73.9)), q = d_two(t), tg = d_s2w(c, bg.sun[0], bg.sun[1]);
-  const pose = reachUp(u); const hx = 250, s = 72;
+  const pose = reachUp(u); const hx = 230, s = 98;
   if (u > .2) { const sp = charPt(hx, 960, s, pose, 'shoulderR', { flip: false }), a = Math.atan2(tg[0] - sp[0], tg[1] - sp[1]) * 180 / Math.PI; const ar = lerp(pose.aR[0], a, .9); pose.aR = [ar, ar + 6]; pose.aRs = 1.06; }
   d_hero(ctx, hx, 960, s, pose, { t: q, sweat: .4, shadowA: .5 });
   ctx.restore();
@@ -269,7 +268,7 @@ function d_s5b(ctx, t, L) { // 74.2–75.94 close da mão; celular sem sinal; a 
   drawGiantHand(ctx, hx, hy, 74, rot, curl, { t: t * .8, arm: 6, rim: [{ col: '#ffc48a', dx: -1, dy: -.4, a: .9 }, { col: '#ff6ab8', dx: 1, dy: -.1, a: .4 }], amb: '#7a3a70', seed: 3 });
   // celular 'sem sinal' passando em primeiro plano
   const pu = seg(t, 74.05, 75.0);
-  if (pu > 0 && pu < 1) { const px = lerp(660, 130, E.io2(pu)), py = 1010 + Math.sin(pu * 3) * 40 - pu * 160, pr = .5 + pu * 1.4; ctx.save(); ctx.globalAlpha = Math.sin(pu * Math.PI) * .95; drawPhone(ctx, px, py, .78, pr, { t, msg: 'Sem sinal' }); ctx.restore(); }
+  if (pu > 0 && pu < 1) { const px = lerp(700, 90, E.io2(pu)), py = 820 + Math.sin(pu * 3) * 50 - pu * 120, pr = .4 + pu * 1.1; ctx.save(); ctx.globalAlpha = Math.min(1, Math.sin(pu * Math.PI) * 1.6); drawPhone(ctx, px, py, 1.15, pr, { t, msg: 'Sem sinal' }); ctx.restore(); }
   d_wind(ctx, t, 11, .35 + fall * .2, -.06);
   fxParticles(ctx, t, 'dust', { x: 0, y: 100, w: 720, h: 900 }, { n: 26, seed: 9, a: .4, speed: 5 });
   d_post(ctx, { grade: .3 * dim, bloom: .22, vig: .6 + fall * .3, vigCol: '24,6,40' });
@@ -346,7 +345,7 @@ function d_s6b(ctx, t, L) { // 77.30–79.30: crane seguindo a linha; ele sobe c
   const q = t, dir = hp.dx >= 0 ? 1 : -1, slope = Math.atan2(hp.dy, Math.abs(hp.dx)) * dir * (dir > 0 ? 1 : -1) * (dir > 0 ? 1 : 1);
   const run = hs > 6 && hs < P.tot - 4, ph = hs / 34;
   const pose = run ? sprintPose(ph) : POSE.cheer; const rot = Math.atan(hp.dy / (hp.dx || 1));
-  if (run) drawTrail(ctx, (g, tt) => { const p = d_pathAt(d_heroS(tt)); d_hero(g, p.x, p.y, 40, sprintPose(d_heroS(tt) / 34), { flip: p.dx < 0, rot: Math.atan(p.dy / (p.dx || 1)), t: tt, shadow: false, cap: true }); }, t, 4, .035, { a: .4, col: '#ffc060', comp: 'lighter' });
+  if (run) drawTrail(ctx, (g, tt) => { const p = d_pathAt(d_heroS(tt)); d_hero(g, p.x, p.y, 40, sprintPose(d_heroS(tt) / 34), { flip: p.dx < 0, rot: Math.atan(p.dy / (p.dx || 1)), t: tt, shadow: false, cap: true }); }, t, 2, .05, { a: .4, col: '#ffc060', comp: 'lighter' });
   d_hero(ctx, hp.x, hp.y, 40, pose, { flip: dir < 0, rot: run ? rot : 0, t, shadow: false, glow: .5 });
   if (run) d_sparks(ctx, t, hs, hs, 26, 2);
   ctx.restore();

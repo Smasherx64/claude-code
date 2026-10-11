@@ -28,7 +28,7 @@ function renderFrame(t) {
   if (s) s.fn(ctx, t, t - s.t0, s.t1 - s.t0); else { ctx.fillStyle = '#16161c'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#555'; ctx.font = '28px sans-serif'; ctx.fillText('sem cena em t=' + t.toFixed(2), 40, 60); }
   ctx.restore();
   // corte de opening: flash + riscos de velocidade diagonais logo após cada troca de quadro
-  if (s && s.t0 > .1) { const ct = t - s.t0; if (ct < .13) { const k = 1 - ct / .13; flash(ctx, .38 * k, chorus ? '255,246,232' : '255,255,255'); parallelLines(ctx, -.5, t, { n: 26, col: '#fff', a: .55 * k, seed: Math.floor(s.t0 * 10) }); } }
+  if (s && s.t0 > .1 && s.t0 < 79) { const ct = t - s.t0; if (ct < .13) { const k = 1 - ct / .13; flash(ctx, .38 * k, chorus ? '255,246,232' : '255,255,255'); parallelLines(ctx, -.5, t, { n: 26, col: '#fff', a: .55 * k, seed: Math.floor(s.t0 * 10) }); } }
   overlay(ctx, t);
   for (const im of IMPACTS) if (t >= im.t && t < im.t + im.d) { if (im.type === 'invert') invert(ctx); else flash(ctx, 1 - (t - im.t) / im.d, im.type === 'white' ? '255,255,255' : '255,240,200'); }
   grain(ctx, t, .06);
