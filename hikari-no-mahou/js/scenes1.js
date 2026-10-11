@@ -4,19 +4,36 @@
    ============================================================ */
 function charAtHip(ctx, x, hipY, s, pose, o) { return drawChar(ctx, x, hipY + skeleton(pose).foot * s + (o && o.sink ? 0 : 0), s, pose, o); }
 function findBlock(li, wx) { return CITY[li].blocks.find(b => wx >= b.x && wx <= b.x + b.w); }
-function winRect(li, wx, col, row, camX, y0) {
+function winRect(li, wx, col, row, camX, y0) { // janela do andar `row` (0 = térreo) da casa que contém wx
   const b = findBlock(li, wx), L = CITY[li], cw = b.w / b.cols;
-  return { x: W / 2 - camX * L.par + b.x + col * cw + cw * .22, y: y0 - row * b.rowH - b.rowH * .1, w: cw * .56, h: b.rowH * .56, b };
+  return { x: W / 2 - camX * L.par + b.x + col * cw + cw * .27, y: y0 - (row + 1) * b.rowH + b.rowH * .3, w: cw * .46, h: b.rowH * .46, b };
 }
 function letterbox(ctx, h) { if (h > .5) { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, h); ctx.fillRect(0, H - h, W, h); } }
-function streetGround(ctx, y0, c = 0) {
-  ctx.fillStyle = lg(ctx, 0, y0, 0, y0 + 300, [[0, mix('#4b4f57', '#1a2150', c)], [1, mix('#2a2c32', '#0c1030', c)]]); ctx.fillRect(-300, y0, W + 600, 1000);
-  ctx.fillStyle = mix('#7b8089', '#3a4590', c); ctx.fillRect(-300, y0, W + 600, 14); // calçada
-  ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fillRect(-300, y0 + 14, W + 600, 3);
+/* chão de concreto de viela: meio-fio, juntas, remendos e um fiozinho de esgoto. camX faz o chão rolar com a câmera */
+function streetGround(ctx, y0, c = 0, camX = 0) {
+  ctx.fillStyle = lg(ctx, 0, y0, 0, y0 + 300, [[0, mix('#8a8d93', '#3a2a7a', c)], [1, mix('#5d6067', '#1a1250', c)]]); ctx.fillRect(-300, y0, W + 600, 1000);
+  ctx.fillStyle = mix('#a9acb2', '#6a5ab0', c); ctx.fillRect(-300, y0, W + 600, 12); // degrau/calçada de concreto
+  ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(-300, y0, W + 600, 3);
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(-300, y0 + 12, W + 600, 3);
+  ctx.strokeStyle = mix('#40434a', '#0f0a38', c); ctx.globalAlpha = .55; ctx.lineWidth = 2; ctx.beginPath();
+  for (let k = -2; k < 14; k++) { const x = ((k * 150 - camX) % 2100 + 2100) % 2100 - 400; ctx.moveTo(x, y0 + 16); ctx.lineTo(x - 26, y0 + 70); ctx.lineTo(x - 70, y0 + 300); }
+  ctx.moveTo(-300, y0 + 62); ctx.lineTo(W + 300, y0 + 62); ctx.stroke(); ctx.globalAlpha = 1;
+  ctx.fillStyle = mix('#6f7279', '#2c1f66', c); ctx.globalAlpha = .5;
+  for (let k = 0; k < 9; k++) { const x = ((k * 263 - camX) % 2300 + 2300) % 2300 - 400; rrect(ctx, x, y0 + 30 + (k % 3) * 26, 70 + (k % 4) * 24, 9, 4); ctx.fill(); }
+  ctx.globalAlpha = 1;
 }
-function lampPost(ctx, x, y0, h, c = 0, on = 0) {
-  ctx.fillStyle = mix('#2c2f35', '#0a1030', c); ctx.fillRect(x - 5, y0 - h, 10, h); ctx.fillRect(x - 5, y0 - h, 56, 8);
-  ctx.fillStyle = on ? '#ffe8a8' : '#d8dbdf'; ctx.fillRect(x + 36, y0 - h + 8, 28, 10);
+/* poste de concreto com cruzeta, lâmpada e fios saindo (gambiarra). o.span = distância até o próximo poste */
+function lampPost(ctx, x, y0, h, c = 0, on = 0, o = {}) {
+  const span = o.span || 560, wc = mix('#2a2c30', '#0d0a2e', c), pc = mix('#7b7e85', '#6d5a9a', c);
+  ctx.fillStyle = pc; ctx.fillRect(x - 6, y0 - h, 12, h); ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(x + 2, y0 - h, 4, h);
+  ctx.fillStyle = mix('#3b3e45', '#1a1250', c); ctx.fillRect(x - 38, y0 - h + 12, 76, 7); ctx.fillRect(x - 28, y0 - h + 40, 56, 6); ctx.fillRect(x - 5, y0 - h, 56, 7);
+  ctx.fillStyle = on ? '#ffe8a8' : '#d8dbdf'; ctx.fillRect(x + 36, y0 - h + 7, 26, 9);
+  ctx.strokeStyle = wc; ctx.lineWidth = 1.8; ctx.lineCap = 'round'; ctx.beginPath();
+  for (let k = 0; k < 6; k++) { const ox = (k - 2.5) * 13, oy = 14 + (k < 3 ? 0 : 28) + (k % 3) * 2, sag = span * (.055 + k * .006); ctx.moveTo(x + ox, y0 - h + oy); ctx.quadraticCurveTo(x + span / 2 + ox, y0 - h + oy + sag * 2, x + span + ox, y0 - h + oy + (k % 3 - 1) * 5); }
+  ctx.stroke(); ctx.lineWidth = 1.4; ctx.beginPath();
+  for (let k = 0; k < 4; k++) { const bx = x + (hash2(k, x | 0, 1) - .5) * 70, by = y0 - h + 16 + hash2(k, x | 0, 2) * 40; ctx.moveTo(bx + 9, by); ctx.ellipse(bx, by, 9, 5 + k, 0, 0, TAU * .8); }
+  ctx.stroke();
+  if (h > 250) { ctx.fillStyle = mix('#555960', '#2a1a6a', c); rrect(ctx, x + 6, y0 - h + 62, 26, 38, 6); ctx.fill(); } // transformador
   if (on) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rg(ctx, x + 50, y0 - h + 14, 0, 140, [[0, 'rgba(255,220,140,.5)'], [1, 'rgba(255,220,140,0)']]); ctx.fillRect(x - 100, y0 - h - 130, 300, 300); ctx.restore(); }
 }
 function birds(ctx, t, seed, n, x0, y0, spread, col = '#2c2f35') {
@@ -44,9 +61,9 @@ function sceneIntro(ctx, t, L, D) {
   drawCrane(ctx, cx, cy, .6, t * 8, { rot: -.12 + Math.sin(t * 3) * .05, body: '#f4f1ea', wing: '#fffdf8', shade: '#c9c5bb', edge: '#4a4a55' });
   drawCity(ctx, 0, y0, 0, { lit: .05, night: 0 });
   streetGround(ctx, y0);
-  lampPost(ctx, 190, y0, 330); lampPost(ctx, 1010, y0, 330);
+  lampPost(ctx, 190, y0, 330, 0, 0, { span: 820 }); lampPost(ctx, 1010, y0, 330, 0, 0, { span: 820 });
   // janela do herói acende (calor no mundo cinza)
-  const w = winRect(2, -60, 2, 8, 0, y0), on = seg(L, 2.05, 2.35);
+  const w = winRect(2, -60, 0, 7, 0, y0), on = seg(L, 2.05, 2.35);
   if (on > 0) {
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     ctx.fillStyle = rgba('#ffcf6a', .95 * on); ctx.fillRect(w.x, w.y, w.w, w.h);

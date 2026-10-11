@@ -25,7 +25,7 @@ function oneEye(ctx, ex, ey, S, side, o) {
     ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.ellipse(ix - ir * .38, iy - ir * .4, ir * .26, ir * .2, -.5, 0, TAU); ctx.fill();
     ctx.beginPath(); ctx.arc(ix + ir * .42, iy + ir * .38, ir * .1, 0, TAU); ctx.fill();
     if (o.refl) { ctx.fillStyle = 'rgba(255,255,255,.55)'; for (let k = 0; k < 3; k++) ctx.fillRect(ix - ir * .62, iy - ir * .7 + k * ir * .17, ir * .55, ir * .07); }
-    ctx.fillStyle = lg(ctx, 0, ey - hMax * 1.2, 0, ey, [[0, 'rgba(40,10,10,.5)'], [1, 'rgba(40,10,10,0)']]); ctx.fillRect(ex - a * 1.2, ey - hMax * 1.6, a * 2.4, hMax * 1.6);
+    ctx.fillStyle = lg(ctx, 0, ey - hMax * 1.2, 0, ey, [[0, 'rgba(40,16,10,.55)'], [1, 'rgba(40,16,10,0)']]); ctx.fillRect(ex - a * 1.2, ey - hMax * 1.6, a * 2.4, hMax * 1.6);
     ctx.restore();
   }
   // pálpebra superior (traço grosso) + cílios
@@ -35,34 +35,34 @@ function oneEye(ctx, ex, ey, S, side, o) {
   ctx.lineWidth = S * .018; for (let k = 0; k < 3; k++) { const u = .35 + k * .22, bx = lerp(inner, outer, u), by = oy + (uy - oy) * .5 * (1 - Math.abs(u - .5) * 1.2) + ey * .0; ctx.beginPath(); ctx.moveTo(bx, by + (ey - by) * .0); ctx.lineTo(bx + side * .04 * S, by - .06 * S); ctx.stroke(); }
   if (open > .04) { ctx.strokeStyle = 'rgba(120,70,60,.55)'; ctx.lineWidth = S * .012; ctx.beginPath(); ctx.moveTo(inner, ey); ctx.bezierCurveTo(inner + (outer - inner) * .2, ly, inner + (outer - inner) * .8, ly, outer, oy); ctx.stroke(); }
   // dobra da pálpebra
-  ctx.strokeStyle = 'rgba(150,80,60,.5)'; ctx.lineWidth = S * .014; ctx.beginPath(); ctx.moveTo(inner + (outer - inner) * .1, uy - hMax * .55 - (1 - open) * .02 * S); ctx.quadraticCurveTo(ex, uy - hMax * 1.1 - (1 - open) * .03 * S, outer, oy - hMax * .55); ctx.stroke();
+  ctx.strokeStyle = 'rgba(90,45,30,.55)'; ctx.lineWidth = S * .014; ctx.beginPath(); ctx.moveTo(inner + (outer - inner) * .1, uy - hMax * .55 - (1 - open) * .02 * S); ctx.quadraticCurveTo(ex, uy - hMax * 1.1 - (1 - open) * .03 * S, outer, oy - hMax * .55); ctx.stroke();
 }
 function eyesCU(ctx, cx, cy, S, o = {}) {
   const brow = o.brow || 0, t = o.t || 0;
-  ctx.fillStyle = lg(ctx, 0, cy - S * 1.2, 0, cy + S * 1.2, [[0, o.skinTop || '#f1bd94'], [.5, o.skin || '#f7d0ab'], [1, o.skinBot || '#eebb93']]); ctx.fillRect(-100, cy - S * 1.6, W + 200, S * 3.2);
+  ctx.fillStyle = lg(ctx, 0, cy - S * 1.2, 0, cy + S * 1.2, [[0, o.skinTop || '#a96d47'], [.5, o.skin || '#b97a52'], [1, o.skinBot || '#a9704a']]); ctx.fillRect(-100, cy - S * 1.6, W + 200, S * 3.2);
   for (const sg of [-1, 1]) {
-    const ex = cx + sg * .74 * S; ctx.fillStyle = rg(ctx, ex, cy, S * .1, S * .6, [[0, 'rgba(190,110,90,.28)'], [1, 'rgba(190,110,90,0)']]); ctx.fillRect(ex - S * .7, cy - S * .7, S * 1.4, S * 1.4);
+    const ex = cx + sg * .74 * S; ctx.fillStyle = rg(ctx, ex, cy, S * .1, S * .6, [[0, 'rgba(214,110,84,.3)'], [1, 'rgba(214,110,84,0)']]); ctx.fillRect(ex - S * .7, cy - S * .7, S * 1.4, S * 1.4);
   }
-  ctx.fillStyle = lg(ctx, cx - S * .3, 0, cx + S * .3, 0, [[0, 'rgba(190,120,95,0)'], [.5, 'rgba(190,120,95,.22)'], [1, 'rgba(190,120,95,0)']]); ctx.fillRect(cx - S * .3, cy - S * .5, S * .6, S * 1.4);
+  ctx.fillStyle = lg(ctx, cx - S * .3, 0, cx + S * .3, 0, [[0, 'rgba(120,70,45,0)'], [.5, 'rgba(120,70,45,.22)'], [1, 'rgba(120,70,45,0)']]); ctx.fillRect(cx - S * .3, cy - S * .5, S * .6, S * 1.4);
   for (const sg of [-1, 1]) {
     const ex = cx + sg * .74 * S;
     oneEye(ctx, ex, cy, S, sg, { ...o, open: o.open == null ? 1 : o.open, look: o.look });
     // sobrancelha
     const by = cy - S * (.55 + (o.open == null ? 1 : o.open) * .06 + brow * .07), ib = ex - sg * .3 * S, ob = ex + sg * .42 * S;
-    ctx.strokeStyle = o.hair || '#17142b'; ctx.lineCap = 'round'; ctx.lineWidth = S * .08;
+    ctx.strokeStyle = o.hair || '#1e1410'; ctx.lineCap = 'round'; ctx.lineWidth = S * .08;
     ctx.beginPath(); ctx.moveTo(ib, by + (brow < 0 ? -brow * -.09 * S : 0) + (brow < 0 ? .09 * S * -brow : 0) * 0); ctx.quadraticCurveTo(ex, by - .08 * S - (brow > 0 ? .03 * S : 0), ob, by + .04 * S + (brow < 0 ? -.07 * S * -brow * 0 : 0)); ctx.stroke();
     ctx.lineWidth = S * .045; ctx.beginPath(); ctx.moveTo(ib, by); ctx.lineTo(ob, by + .05 * S); ctx.stroke();
   }
   // nariz
-  ctx.strokeStyle = 'rgba(170,100,80,.55)'; ctx.lineWidth = S * .02; ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(110,60,38,.6)'; ctx.lineWidth = S * .022; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(cx - S * .07, cy + S * .55); ctx.quadraticCurveTo(cx, cy + S * .62, cx + S * .07, cy + S * .55); ctx.stroke();
 }
-/* franja espetada (cabelo) por cima do close */
-function fringe(ctx, cx, y0, S, t = 0, col = '#16142a') {
-  ctx.fillStyle = col; ctx.strokeStyle = '#0d0b1c'; ctx.lineWidth = S * .02; ctx.lineJoin = 'round';
-  const sp = [[-2.4, 0], [-1.9, .62], [-1.55, .1], [-1.1, .86], [-.65, .14], [-.2, .98], [.25, .1], [.7, .78], [1.1, .08], [1.55, .66], [1.9, .12], [2.4, .5], [2.4, -1], [-2.4, -1]];
-  poly(ctx, sp.map(p => [cx + p[0] * S * .62, y0 + p[1] * S * .5 + Math.sin(t * 2 + p[0]) * 1.5])); ctx.fill(); ctx.stroke();
-  ctx.strokeStyle = 'rgba(100,120,200,.5)'; ctx.lineWidth = S * .03; ctx.beginPath(); ctx.moveTo(cx - S * .8, y0 - S * .1); ctx.quadraticCurveTo(cx, y0 - S * .2, cx + S * .6, y0 - S * .05); ctx.stroke();
+/* franja de cabelo crespo (bolinhas) por cima do close */
+function fringe(ctx, cx, y0, S, t = 0, col = '#1e1410') {
+  const pts = []; for (let i = -9; i <= 9; i++) pts.push([cx + i * S * .27, y0 + (Math.abs(i) % 2 ? .14 : .02) * S + Math.sin(t * 2 + i) * 1.2 + Math.abs(i) * .012 * S, S * (.3 + (Math.abs(i * 7) % 3) * .03)]);
+  ctx.strokeStyle = '#0d0810'; ctx.lineWidth = S * .05; pts.forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], p[2], 0, TAU); ctx.stroke(); });
+  ctx.fillStyle = col; ctx.fillRect(cx - S * 3, y0 - S * 1.6, S * 6, S * 1.6); pts.forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], p[2], 0, TAU); ctx.fill(); });
+  ctx.strokeStyle = 'rgba(160,120,90,.35)'; ctx.lineWidth = S * .03; ctx.beginPath(); ctx.moveTo(cx - S * .8, y0 - S * .1); ctx.quadraticCurveTo(cx, y0 - S * .25, cx + S * .6, y0 - S * .05); ctx.stroke();
 }
 
 /* ---------- persianas: faixas diagonais de luz ---------- */
@@ -119,7 +119,7 @@ function weight1000(ctx, x, y, s, rot = 0) {
 }
 /* mão grande (silhueta de quadrinho). Aponta para cima; origem no pulso. curl 0=aberta … 1=punho */
 function bigHand(ctx, x, y, s, rot, curl, o = {}) {
-  const col = o.col || '#f7d0ab', ol = o.ol || '#15122a', olw = o.olw || 6;
+  const col = o.col || '#b97a52', ol = o.ol || '#1a1224', olw = o.olw || 6;
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const fing = [[-33, 62, -4], [-11, 74, 0], [11, 68, 3], [33, 54, 7]];
   const segf = (bx, by, L, base, c) => {
