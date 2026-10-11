@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>O Brilho da Cicatriz — Opening</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:system-ui,sans-serif;color:#fff}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  canvas{max-width:100vw;max-height:100vh;aspect-ratio:16/9;background:#000;display:block}
+  #ui{position:fixed;left:0;right:0;bottom:0;padding:10px 16px;display:flex;gap:12px;align-items:center;background:linear-gradient(transparent,rgba(0,0,0,.7));opacity:0;transition:opacity .25s}
+  body:hover #ui{opacity:1}
+  button{background:#ffc94a;color:#111;border:0;border-radius:8px;padding:8px 16px;font-weight:700;cursor:pointer}
+  input[type=range]{flex:1}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+<div id="ui"><button id="play">▶ Play</button><input id="seek" type="range" min="0" max="123.1" step="0.01" value="0"><span id="tt">0.00</span></div>
+<audio id="aud" src="audio/song.mp3" preload="auto"></audio>
+<script src="js/lib.js"></script>
+<script src="js/lyrics.js"></script>
+<script src="js/world.js"></script>
+<script src="js/world2.js"></script>
+<script src="js/chars.js"></script>
+<script src="js/props.js"></script>
+<script src="js/text.js"></script>
+<script src="js/magic.js"></script>
+<script src="js/scenes_a.js"></script>
+<script src="js/scenes_b.js"></script>
+<script src="js/scenes_c.js"></script>
+<script src="js/scenes_d.js"></script>
+<script src="js/scenes_e.js"></script>
+<script src="js/scenes_f.js"></script>
+<script src="js/scenes_g.js"></script>
+<script src="js/overlay.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
