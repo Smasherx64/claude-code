@@ -849,7 +849,7 @@ function c2wand(ctx, Q, P, h, wd, m, t, o) {
 }
 
 /* ---------------- personagem ---------------- */
-function drawChar(ctx, x, y, s, pose, o = {}) {
+function drawCharFull(ctx, x, y, s, pose, o = {}) {
   const cfg = c2cfg(o), f = o.flip ? -1 : 1, t = o.t || 0, m = cfg.mag ? clamp(o.magical || 0) : 0, hero = cfg === C2W.hero;
   pose = Object.assign({}, POSE.stand, pose);
   const P = Object.assign({}, c2pal(cfg, o, m)); Object.assign(P, c2eyeExtras(cfg, m, o, P));
@@ -950,6 +950,98 @@ function drawChar(ctx, x, y, s, pose, o = {}) {
   if (hero && I > .03) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const n = Math.round(4 + I * 7), cols = ['#fff6c8', '#ffc2ea', '#d8c4ff', '#ffffff'];
     for (let i = 0; i < n; i++) { const a = t * 1.3 + i * TAU / n + i * .7, rr = 2.4 + (i % 3) * .8 + Math.sin(t * 2 + i) * .35; sparkle(ctx, Math.cos(a) * rr * .85, -1.8 + Math.sin(a) * rr * 1.1, (.14 + .28 * Math.pow(Math.sin(t * 5 + i * 2.1) * .5 + .5, 2)) * Math.min(1, I + .3), a * .5, cols[i % 4]); }
     ctx.restore(); }
+  ctx.restore();
+  return k;
+}
+
+
+/* ============================================================
+   MODO STICK — corpo de palitos coloridos (contorno escuro), cabeça/cabelo/rosto do kit original.
+   CHAR_STYLE = 'stick' (padrão) | 'full' (corpo completo). Também por chamada: o.style.
+   ============================================================ */
+var CHAR_STYLE = 'stick';
+function drawChar(ctx, x, y, s, pose, o = {}) { return ((o.style || CHAR_STYLE) === 'full' ? drawCharFull : drawCharStick)(ctx, x, y, s, pose, o); }
+function c2lum(c) { const a = hex(c); return (a[0] * .299 + a[1] * .587 + a[2] * .114) / 255; }
+function drawCharStick(ctx, x, y, s, pose, o = {}) {
+  const cfg = c2cfg(o), f = o.flip ? -1 : 1, t = o.t || 0, m = cfg.mag ? clamp(o.magical || 0) : 0, hero = cfg === C2W.hero;
+  pose = Object.assign({}, POSE.stand, pose);
+  const P = Object.assign({}, c2pal(cfg, o, m)); Object.assign(P, c2eyeExtras(cfg, m, o, P));
+  const k = skeleton(pose), seed = P._seed || 0;
+  const br = Math.sin(t * 2.3 + seed) * .028 + (pose.bounce ? -pose.bounce * .06 : 0);
+  [k.neck, k.head, k.shL, k.shR, k.chest, k.aL[0], k.aR[0]].forEach(p => { p[1] -= br; });
+  k.ha += rad(Math.sin(t * 1.15 + seed) * 1.1);
+  const sc = cfg.sc * (o.scale || 1), hkS = cfg.hkS || 1, wv = o.wind == null ? 1 : o.wind, lift = (pose.air || 0) * 2 + (pose.lift || 0), spinC = o.spin != null ? Math.cos(o.spin) : 1;
+  ctx.save(); ctx.translate(x, y); if (o.alpha != null) ctx.globalAlpha *= o.alpha;
+  ctx.scale(s * f * sc, s * sc); if (o.spin != null) ctx.scale(Math.max(.08, Math.abs(spinC)), 1);
+  const Q = c2Q(ctx, o, f), Qh = Object.assign({}, Q, { ol: Q.ol / hkS }), pxu = Q.pxu;
+  if (o.shadow !== false) {
+    const sa = (o.shadowA == null ? .34 : o.shadowA) * (1 - clamp(lift / 3) * .6);
+    ctx.save(); ctx.translate(pose.dx || 0, 0); ctx.scale(1, .2); ctx.fillStyle = rg(ctx, 0, 0, 0, 2.2, [[0, `rgba(10,6,24,${sa})`], [.55, `rgba(10,6,24,${sa * .55})`], [1, 'rgba(10,6,24,0)']]); ctx.beginPath(); ctx.arc(0, 0, 2.2, 0, TAU); ctx.fill(); ctx.restore();
+  }
+  ctx.translate(pose.dx || 0, (pose.hipAnchor ? .1 : -k.foot) - lift + (o.sink || 0));
+  if (o.squash) { ctx.translate(0, k.foot); ctx.scale(1 + o.squash * .5, 1 - o.squash); ctx.translate(0, -k.foot); }
+  if (o.rot) ctx.rotate(o.rot);
+  const Env = { hw: Math.max(.5, (pose.hs == null ? .5 : pose.hs) * C2K + .32) * (cfg.bw || 1), hy: .16, wv };
+  const headTf = () => { ctx.translate(k.head[0], k.head[1]); ctx.rotate(k.ha); ctx.scale(hkS, hkS); };
+  const W0 = Math.max(.15, 5.2 / pxu), OL = Math.max(Q.ol * 1.6, 2.2 / pxu); // espessura do palito e do contorno (unidades)
+  const inkOf = c => (c2lum(c) < .2 ? '#7a66b8' : c2dk(c, .62, '#120a22'));
+  const stk = (pts, w, col, ink) => { ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+    ctx.strokeStyle = ink || inkOf(col); ctx.lineWidth = w + OL * 2; ctx.stroke(); ctx.strokeStyle = col; ctx.lineWidth = w; ctx.stroke(); };
+  const dot = (p, r, col) => { ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, TAU); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = inkOf(col); ctx.lineWidth = OL * 1.2; ctx.stroke(); };
+  const topC = P.top, botC = P.bot, skin = P.skin, shoeC = cfg.shoeK === 'none' ? botC : P.shoe;
+  // fitas esvoaçantes (hero mágico)
+  if (hero && m > .03) { ctx.save(); ctx.globalAlpha = clamp(m * 3); const wy = Env.hy - .35;
+    c2ribbon(ctx, Q, -Env.hw * .6, wy, -1, 2.4 * m, .3, '#ffb3da', '#c9a8ff', 0, t, wv, '#d78ab8'); c2ribbon(ctx, Q, Env.hw * .6, wy, 1, 2.2 * m, .3, '#c9a8ff', '#ffb3da', 1.7, t, wv, '#d78ab8'); ctx.restore(); }
+  // cabelo de trás
+  ctx.save(); headTf(); c2head(ctx, Qh, P, cfg, o, t, m, o.hair, 'back'); ctx.restore();
+  // pernas + pés
+  const legCol = hero && m > .5 ? mix(botC, '#fff6fb', .6) : botC;
+  [k.lL, k.lR].forEach((l, li) => {
+    stk([l[0], l[1], l[2]], W0 * .92, legCol);
+    if (cfg.shoeK !== 'none' && !cfg.thief) { const fx = l[2][0], fy = l[2][1] + .02; stk([[fx - .05, fy], [fx + .5, fy + .02]], W0 * 1.05, hero && m > .5 ? '#ff8fc8' : shoeC); }
+    if (hero && li === 0 && m < .6) { ctx.save(); ctx.globalAlpha = 1 - clamp(m * 1.7); ctx.translate(l[1][0], l[1][1]); ctx.rotate(-.2); ctx.fillStyle = '#f6dcc0'; ctx.strokeStyle = '#a8785a'; ctx.lineWidth = OL; ctx.fillRect(-.16, -.1, .32, .2); ctx.strokeRect(-.16, -.1, .32, .2); ctx.restore(); } // curativo
+  });
+  if (Math.abs(k.lR[0][0] - k.lL[0][0]) > .2) stk([k.lL[0], k.lR[0]], W0 * .9, legCol);
+  // saia mágica
+  if (hero && m > .03) { const mm = E.io2(m); ctx.save(); ctx.globalAlpha = clamp(m * 3.5);
+    c2skirt(ctx, Q, P, k, Env.hw, .5 + .55 * mm, .75 * mm, 7, '#ffb3da', '#f08cc0', null, '#d78ab8', t, wv, 0.5, Env.hy);
+    c2skirt(ctx, Q, P, k, Env.hw, .5 + .38 * mm, .52 * mm, 6, '#fff7fb', '#f1d6e8', '#ffd23f', '#d78ab8', t, wv, 1.2, Env.hy);
+    c2skirt(ctx, Q, P, k, Env.hw, .5 + .2 * mm, .3 * mm, 5, '#d8c4ff', '#b49cf0', null, '#9a82d8', t, wv, 2.1, Env.hy); ctx.restore(); }
+  else if (cfg.bot_ === 'skirt') c2skirt(ctx, Q, P, k, Env.hw, cfg.hf || 1.5, .38, 0, P.bot, P.botSh, c2lt(P.bot, .3), c2ink(P, P.bot, .55), t, wv, seed, Env.hy);
+  const arm = (a, front) => { const c = hero && m > .5 ? mix(topC, '#fff3f8', .7) : topC; stk([a[0], a[1], a[2]], W0 * .9, c); };
+  if (!pose.frontL) arm(k.aL); if (!pose.frontR) arm(k.aR);
+  // bolsa da mãe
+  if (cfg.bag) { const bx = -Env.hw - .15, by = Env.hy + .1; stk([[k.shR[0] - .1, k.shR[1] - .08], [bx + .1, by - .35]], .08, '#c0566a');
+    c2group(ctx, Q, [{ t: 'poly', p: [[bx - .5, by - .35], [bx + .52, by - .35], [bx + .6, by + .7], [bx - .6, by + .7]] }], '#d96a7e', '#a8465a', c2dk('#d96a7e', .5, '#3a1020'), { off: .12 }); }
+  // pescoço, tronco (hip→peito→pescoço) e ombros
+  const tc = hero && m > .5 ? mix(topC, '#fff3f8', .7) : topC;
+  stk([k.neck, k.head], W0 * .7, skin);
+  ctx.save(); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(k.chest[0] * 1.05, k.chest[1] * .9, k.neck[0], k.neck[1] + .1);
+  ctx.strokeStyle = inkOf(tc); ctx.lineWidth = W0 * 1.15 + OL * 2; ctx.stroke(); ctx.strokeStyle = tc; ctx.lineWidth = W0 * 1.15; ctx.stroke(); ctx.restore();
+  stk([k.shL, k.shR], W0 * .9, tc);
+  if (cfg.top_ === 'hoodie' && m < .6) { ctx.save(); ctx.globalAlpha = 1 - clamp(m * 1.7); ctx.strokeStyle = c2dk(topC, .35); ctx.lineWidth = W0 * .3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(k.neck[0] - .12, k.neck[1] + .22); ctx.lineTo(k.neck[0] - .1, k.neck[1] + .85); ctx.moveTo(k.neck[0] + .12, k.neck[1] + .22); ctx.lineTo(k.neck[0] + .1, k.neck[1] + .85); ctx.stroke(); ctx.restore(); } // cordinhas do moletom
+  // laço grande (mágico)
+  if (hero && m > .03) { ctx.save(); ctx.translate(k.neck[0] * .9, k.neck[1] + .95); ctx.scale(m, m); ctx.rotate(Math.sin(t * 2) * .03); const bc = P.bow, bi = c2dk(bc, .45, '#4a0a30');
+    [-1, 1].forEach(q => { ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(q * .3, -.5, q * .9, -.55, q * 1.05, -.1); ctx.bezierCurveTo(q * 1.1, .3, q * .8, .55, q * .3, .3); ctx.closePath(); ctx.fillStyle = bc; ctx.fill(); ctx.strokeStyle = bi; ctx.lineWidth = Q.ol * 1.6; ctx.stroke(); });
+    ctx.beginPath(); ctx.arc(0, 0, .26, 0, TAU); ctx.fillStyle = '#ffd23f'; ctx.fill(); ctx.stroke(); ctx.restore(); }
+  // cicatriz dourada no peito
+  if ((o.scar || 0) > .01) c2scar(ctx, k.chest[0] * .98, k.chest[1] + .02, .95, o.scar, t, Q);
+  // pingente-estrela
+  const pend = hero ? (o.pendant == null ? 1 : o.pendant) : 0;
+  if (pend > .01 && m < .98 && !(o.scar > .5)) { const cx = k.chest[0], cy = k.chest[1] + .05; ctx.save(); ctx.globalAlpha = pend * (1 - m);
+    if (o.pendantGlow) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rg(ctx, cx, cy, 0, .9, [[0, `rgba(255,214,120,${.6 * o.pendantGlow})`], [1, 'rgba(255,214,120,0)']]); ctx.beginPath(); ctx.arc(cx, cy, .9, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
+    compassStar(ctx, cx, cy, .24, Math.sin(t * 1.4) * .08, '#fff2a0', '#ffbf2e', '#8a5410', Q.ol * 1.2, { gem: '#ffe9a8' }); ctx.restore(); }
+  if (pose.frontL) arm(k.aL); if (pose.frontR) arm(k.aR);
+  // mãos (bolinhas)
+  const hands = [k.aL[2], k.aR[2]]; const wd = clamp(o.wand || 0);
+  hands.forEach((h, i) => { if (i === 1 && wd > .01) return; dot(h, W0 * .62, skin); });
+  if (wd > .01) { const h = k.aR[2]; c2wand(ctx, Q, P, h, wd, m, t, o); dot(h, W0 * .62, skin); }
+  // cabeça (rosto, cabelo, acessórios)
+  ctx.save(); headTf(); c2head(ctx, Qh, P, cfg, o, t, m, o.hair, 'front'); ctx.restore();
+  if (cfg.thief) { ctx.save(); for (let i = 0; i < 9; i++) { const u = (i / 9 + t * .25) % 1, xx = Math.sin(i * 2.3) * 1.5 + Math.sin(t * 2 + i) * .3, yy = Env.hy + 1.5 - u * 3.2; ctx.fillStyle = rg(ctx, xx, yy, 0, .3 + u * .6, [[0, `rgba(30,16,50,${.32 * (1 - u)})`], [1, 'rgba(30,16,50,0)']]); ctx.beginPath(); ctx.arc(xx, yy, .3 + u * .6, 0, TAU); ctx.fill(); } ctx.restore(); }
+  const I = clamp(m * 1.1) * .55 + Math.max(0, m * (1 - m) * 4) * .9;
+  if (hero && I > .03) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const n = Math.round(4 + I * 7), cols = ['#fff6c8', '#ffc2ea', '#d8c4ff', '#ffffff'];
+    for (let i = 0; i < n; i++) { const a = t * 1.3 + i * TAU / n + i * .7, rr = 2.4 + (i % 3) * .8 + Math.sin(t * 2 + i) * .35; sparkle(ctx, Math.cos(a) * rr * .85, -1.8 + Math.sin(a) * rr * 1.1, (.14 + .28 * Math.pow(Math.sin(t * 5 + i * 2.1) * .5 + .5, 2)) * Math.min(1, I + .3), a * .5, cols[i % 4]); } ctx.restore(); }
   ctx.restore();
   return k;
 }
