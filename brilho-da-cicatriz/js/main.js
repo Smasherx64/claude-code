@@ -11,7 +11,7 @@ window.ready = (async () => {
   const jp = '光がここにあるの中で踊ろう魔法はまだ消えていない星が導く信じてあなたの夢は本物だよ痛くても前へ進もうは一人じゃない空より高いもっと輝けでも私がいる';
   await Promise.all(fams.map(f => document.fonts.load(`40px "${f}"`, 'ÁÉÍÓÚÃÕÇáéíóúãõç ' + jp)));
   await document.fonts.load('40px "Noto Color Emoji"', '✂️🦗🔒💸😴✨💃⭐'); await document.fonts.ready;
-  if (typeof initWorld === 'function') initWorld();
+  if (typeof initWorld === 'function') initWorld(); if (typeof fxWarm === 'function') fxWarm();
 })();
 const _g = n => (typeof globalThis[n] !== 'undefined' ? globalThis[n] : []);
 const SCENES = [].concat(_g('SCENES_A'), _g('SCENES_B'), _g('SCENES_C'), _g('SCENES_D'), _g('SCENES_E'), _g('SCENES_F'), _g('SCENES_G')).sort((a, b) => a.t0 - b.t0);

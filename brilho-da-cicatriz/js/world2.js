@@ -645,7 +645,7 @@ function fxDOF(ctx, drawFn, blur = 6) {
   const cv = ctx.canvas, k = `${cv.width}x${cv.height}`; let b = _fxDofBuf[k]; if (!b) { b = _fxDofBuf[k] = _fxCanvas(cv.width, cv.height); }
   const bc = b.getContext('2d'); bc.setTransform(1, 0, 0, 1, 0, 0); bc.clearRect(0, 0, b.width, b.height); bc.setTransform(ctx.getTransform());
   bc.save(); drawFn(bc); bc.restore();
-  ctx.save(); const sc = cv.width / W; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.filter = `blur(${blur * sc}px)`; ctx.drawImage(b, 0, 0); ctx.restore();
+  ctx.save(); const sc = cv.width / W; ctx.setTransform(1, 0, 0, 1, 0, 0); const pd = blur * sc * 1.6; ctx.filter = `blur(${blur * sc}px)`; ctx.drawImage(b, -pd, -pd, cv.width + pd * 2, cv.height + pd * 2); ctx.restore();
 }
 const _fxVigC = {};
 function fxVignette(ctx, s = .5, col = '4,8,16', o = {}) {
@@ -1109,3 +1109,6 @@ function intDoorway(ctx, t, o = {}) {
   ctx.restore();
   return { door: D, floorY, spill: [cx, floorY + 60], bulb: [bx, by + 34] };
 }
+
+/* Pré-aquece as texturas de concreto (opcional: chamar em initWorld para evitar o engasgo do 1º quadro). */
+function fxWarm() { for (const tn of ['night', 'day', 'warm']) { _fxConcTex(tn, 1); _fxConcTex(tn, 2); } _fxConcTex('day', 5, true); _fxConcTex('day', 9, true); _fxConcTex('night', 7, true); _fxConcTex('day', 11, true); _fxConcTex('day', 23, true); _fxConcTex('day', 31, true); }
