@@ -22,8 +22,13 @@ function renderFrame(t) {
   ctx.setTransform(SC, 0, 0, SC, 0, 0); ctx.clearRect(0, 0, W, H); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
   const s = SCENES.find(s => t >= s.t0 && t < s.t1);
   ctx.save();
+  // punch-zoom na batida durante refrões e rap forte (linguagem de opening)
+  const chorus = (t >= 36 && t < 48.3) || (t >= 72.8 && t < 86.5) || (t >= 102.4 && t < 117.2) || (t >= 91.3 && t < 102.4);
+  if (chorus) { const z = 1 + .016 * beatInfo(t).pulse; ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2); }
   if (s) s.fn(ctx, t, t - s.t0, s.t1 - s.t0); else { ctx.fillStyle = '#16161c'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#555'; ctx.font = '28px sans-serif'; ctx.fillText('sem cena em t=' + t.toFixed(2), 40, 60); }
   ctx.restore();
+  // corte de opening: flash + riscos de velocidade diagonais logo após cada troca de quadro
+  if (s && s.t0 > .1) { const ct = t - s.t0; if (ct < .13) { const k = 1 - ct / .13; flash(ctx, .38 * k, chorus ? '255,246,232' : '255,255,255'); parallelLines(ctx, -.5, t, { n: 26, col: '#fff', a: .55 * k, seed: Math.floor(s.t0 * 10) }); } }
   overlay(ctx, t);
   for (const im of IMPACTS) if (t >= im.t && t < im.t + im.d) { if (im.type === 'invert') invert(ctx); else flash(ctx, 1 - (t - im.t) / im.d, im.type === 'white' ? '255,255,255' : '255,240,200'); }
   grain(ctx, t, .06);
