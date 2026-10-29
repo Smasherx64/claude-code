@@ -118,6 +118,20 @@ Simplificações: a escala de tempo é acelerada (1 dia de jogo ~ 3 dias de efei
 
 Não implementado: periodização ondulatória, % de 1RM exato por série, os 12 testes de movimento do curso completo (o PDF traz só 3 de bônus) e as demais articulações (joelho, escápula).
 
+### Terceira rodada (leitura completa dos sete materiais)
+
+Ajustes feitos depois de ler os capítulos de nutrição, periodização e prescrição por inteiro:
+
+| Ajuste | Fonte (conceito) |
+|---|---|
+| EPOC limitado a no máximo 100 kcal (antes era 10% do gasto da sessão) | Enciclopédia, EPOC: dura minutos e é irrelevante para emagrecer |
+| Séries de músculos auxiliares contam meia série (supino: 1 peito + 0,5 tríceps + 0,5 ombro) | Enciclopédia, séries por grupo muscular |
+| Gasto basal cai ao perder peso além do esperado (-10% do peso ≈ -6% do gasto) | Jeukendrup, controle do peso (adaptação metabólica) |
+| Janela de síntese proteica mais curta no nível avançado | Enciclopédia, nutrient timing |
+| 5 dicas novas (progressão de carga 2-10%, EPOC, adaptação metabólica, proteína por refeição, meia série) | Prestes et al.; Enciclopédia; Jeukendrup |
+
+Ainda não implementado, mas anotado para próximas rodadas: periodização ondulatória e em bloco, escolha da zona de repetições por nível (iniciante 8-12RM, avançado 1-12RM), prescrição por RM com ajuste automático de 2-10%, variação individual de resposta (alta e baixa responsividade), meta SMART e sequência de treinos (hábito), pré-exaustão, circuito, pirâmide e repetições forçadas como métodos extras.
+
 ## Aviso
 
 Jogo educativo e simplificado. Não substitui orientação médica, de nutricionista ou de profissional de Educação Física.

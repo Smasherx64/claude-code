@@ -174,12 +174,12 @@ const MUSC=['PEITO','COSTAS','OMBROS','BÍCEPS','TRÍCEPS','PERNAS','ABDÔMEN'];
 const MFRAC=[.10,.20,.10,.06,.08,.40,.06];                 // fração da massa muscular esquelética por grupo
 const TYPM={M:MFRAC.map(f=>f*30),F:MFRAC.map(f=>f*20)};    // massa "típica" (kg) por grupo, para a aparência
 const EX=[
-  {n:'SUPINO RETO',m:0,sec:[[4,.35],[2,.25]],coef:16,pose:'bench'},
-  {n:'REMADA CURVADA',m:1,sec:[[3,.3]],coef:8,pose:'row'},
-  {n:'DESENVOLVIMENTO',m:2,sec:[[4,.3]],coef:12,pose:'press'},
+  {n:'SUPINO RETO',m:0,sec:[[4,.5],[2,.5]],coef:16,pose:'bench'},
+  {n:'REMADA CURVADA',m:1,sec:[[3,.5]],coef:8,pose:'row'},
+  {n:'DESENVOLVIMENTO',m:2,sec:[[4,.5]],coef:12,pose:'press'},
   {n:'ROSCA DIRETA',m:3,sec:[],coef:15,pose:'curl'},
   {n:'TRÍCEPS FRANCÊS',m:4,sec:[],coef:11,pose:'tri'},
-  {n:'AGACHAMENTO',m:5,sec:[[6,.2]],coef:8,pose:'squat'},
+  {n:'AGACHAMENTO',m:5,sec:[[6,.5]],coef:8,pose:'squat'},
   {n:'ABDOMINAL',m:6,sec:[],coef:7,pose:'crunch'},
 ];
 const ANTAG={0:1,1:0,3:4,4:3};
@@ -222,6 +222,11 @@ const TIPS=[
   'COMER POUCO DEMAIS PARA O SEU MÚSCULO (MENOS DE ~30 KCAL POR KG DE MASSA MAGRA) ATRAPALHA A RECUPERAÇÃO.',
   'MOBILIDADE DE TORNOZELO, QUADRIL E OMBRO MELHORA A AMPLITUDE E DEIXA O AGACHAMENTO E O SUPINO MAIS SEGUROS.',
   'MEMÓRIA MUSCULAR: QUEM JÁ TREINOU RECUPERA O MÚSCULO PERDIDO MAIS RÁPIDO QUANDO VOLTA.',
+  'PROGRESSÃO: SE VOCÊ FEZ 1-2 REPS ACIMA DA ZONA EM 2 TREINOS SEGUIDOS, SOBE A CARGA 2-10%. É ASSIM QUE SE EVOLUI, NÃO TROCANDO DE EXERCÍCIO.',
+  'EPOC (QUEIMA APÓS O TREINO) É PEQUENA: MENOS DE 100 KCAL. O QUE EMAGRECE É O SALDO CALÓRICO DA SEMANA.',
+  'AO PERDER PESO O GASTO CAI UM POUCO MAIS DO QUE O ESPERADO (ADAPTAÇÃO METABÓLICA). POR ISSO O PLATÔ É NORMAL.',
+  'PROTEÍNA: CERCA DE 0,4 G/KG POR REFEIÇÃO, EM 3 A 6 REFEIÇÕES, E 1,6-2,2 G/KG NO DIA. MAIS QUE ISSO NÃO AJUDA.',
+  'MÚSCULOS AUXILIARES CONTAM MEIA SÉRIE: UMA SÉRIE DE SUPINO CONTA 1 PARA PEITO E 0,5 PARA TRÍCEPS E OMBRO.',
   'JOGO EDUCATIVO COM RITMO ACELERADO. NÃO SUBSTITUI MÉDICO, NUTRICIONISTA OU PROFISSIONAL DE EDUCAÇÃO FÍSICA.',
 ];
 const MPS=[1,.65,.34,.08,0];   // elevação da síntese proteica nos dias após o treino (≈ +65% em 24 h, +34% em 48 h)
@@ -245,7 +250,7 @@ function makeState(pi,prof){
 const musT=s=>s.mus.reduce((a,m)=>a+m.mass,0);
 const weight=s=>s.fat+musT(s)+s.other;
 const bf=s=>s.fat/weight(s);
-const bmr=s=>s.R+13*musT(s)+4.5*s.fat;          // 13 kcal/kg músculo e 4,5 kcal/kg gordura (Elia; Wang et al.)
+const bmr=s=>(s.R+13*musT(s)+4.5*s.fat)*(1-clamp((s.w0-weight(s))/s.w0,0,.25)*.6);          // 13 kcal/kg músculo e 4,5 kcal/kg gordura (Elia; Wang et al.)
 const maint=s=>bmr(s)*1.15/0.9;                  // ingestão em que gasto = ingestão (NEAT 15% + efeito térmico 10%)
 const WD=['SEG','TER','QUA','QUI','SEX','SÁB','DOM'];
 function sexF(ex){return S.prof.sex==='F'?(ex.m===5||ex.m===6?0.85:0.72):1;}
@@ -835,7 +840,7 @@ function endDay(h){
   const noviceMult=1.5/(1+.1*(S.lvl-1));
   let bump=0,gainTot=0;
   S.mus.forEach((m,i)=>{
-    const ds=clamp(S.day-m.last,0,4),mps=m.last>0?MPS[ds]:0;
+    const ds=clamp(S.day-m.last,0,4),mps=m.last>0?MPS[ds]*(S.lvl>=7&&ds>=2?.6:1):0;
     if(m.dmg>0){
       const cap=(38+22*mps)*pf*sf*ef,rep=Math.min(m.dmg,cap);m.dmg-=rep;
       const pot=m.mass0*(S.prof.sex==='M'?1.5:1.45),room=clamp(1-(m.mass-m.mass0)/(pot-m.mass0),0,1);
@@ -849,7 +854,7 @@ function endDay(h){
     m.fat*=.2;if(m.inj>0)m.inj--;
     if(m.dmg<=0.5)m.peak=0;
   });
-  const bumpK=0.055*B*bump,epoc=0.10*S.sessionKcal;
+  const bumpK=0.055*B*bump,epoc=Math.min(100,0.03*S.sessionKcal);
   const tdee=B+0.15*B+0.10*S.cal+S.sessionKcal+epoc+bumpK,bal=S.cal-tdee;
   let dFat=0;
   if(bal>=0){dFat=(bal*RITMO-gainTot*1800)/7700;}
