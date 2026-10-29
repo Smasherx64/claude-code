@@ -85,6 +85,10 @@ Valores de referência usados (conferidos em literatura):
 - Com treino e superávit: ganha músculo e menos gordura.
 - Com treino e déficit (Marta, Caio): perde gordura e mantém o músculo.
 
+## Ficha de treino e projeção
+
+No hub há o botão **FICHA**. Nela você monta a semana: escolhe o dia, as séries (0 a 6) de cada exercício e a carga (40, 55, 70 ou 85% da força). Há modelos prontos (iniciante 3x, A/B 4x, avançado 5x) e a tela mostra as séries por semana de cada músculo contra as zonas de volume (baixo, ótimo, alto, excesso). **PROJETAR** simula de 4 a 24 semanas com o mesmo modelo do jogo (dieta e sono atuais) e mostra o gráfico de peso, músculo, gordura e fadiga, o corpo antes e depois, o saldo calórico médio, os deloads automáticos e, por músculo, a massa ganha e a força inicial e final. É uma estimativa simplificada, não prescrição.
+
 ## Ciência do treino (baseada nos materiais de referência)
 
 Esta versão incorpora conceitos de sete materiais fornecidos pelo autor do projeto (nutrição esportiva de Asker Jeukendrup e colaboradores, a Enciclopédia do Treinamento e Nutrição, "Prescrição e Periodização do Treinamento de Força em Academias" de Prestes et al., "Ciência do Treinamento Desportivo" de Zakharov e Gomes, os slides "Métodos e Sistemas" do LTF/UFRJ, o guia de 117 exercícios de mobilidade e o guia de treino feminino de Charles Glass). Os textos não são reproduzidos: o jogo usa os conceitos e números com palavras próprias, e simplifica o que não cabe num jogo.

@@ -230,6 +230,15 @@ const TIPS=[
   'JOGO EDUCATIVO COM RITMO ACELERADO. NÃO SUBSTITUI MÉDICO, NUTRICIONISTA OU PROFISSIONAL DE EDUCAÇÃO FÍSICA.',
 ];
 const MPS=[1,.65,.34,.08,0];   // elevação da síntese proteica nos dias após o treino (≈ +65% em 24 h, +34% em 48 h)
+const FZ=[.4,.55,.7,.85];
+function fdays(kind){
+  const d=Array.from({length:7},()=>EX.map(()=>({n:0,p:1})));
+  const set=(day,l)=>l.forEach(([i,n,p])=>{d[day][i]={n,p};});
+  if(kind==='ini'){for(const x of[0,2,4])set(x,[[5,2,1],[0,2,1],[1,2,1],[2,2,1],[6,2,1]]);}
+  else if(kind==='ab'){for(const x of[0,3])set(x,[[0,3,2],[2,3,2],[4,3,2],[6,3,1]]);for(const x of[1,4])set(x,[[5,4,2],[1,4,2],[3,3,2]]);}
+  else if(kind==='av'){set(0,[[0,4,2],[2,3,2],[4,3,2]]);set(1,[[1,4,2],[3,3,2]]);set(2,[[5,5,2],[6,3,1]]);set(3,[[0,4,3],[2,3,2],[4,3,2]]);set(4,[[1,4,3],[3,3,2],[5,3,2]]);}
+  return d;
+}
 const RITMO=3;                 // aceleração do jogo: 1 dia de jogo muda o corpo como ~3 dias reais
 
 // ============ estado ============
@@ -241,7 +250,7 @@ function makeState(pi,prof){
   const p=prof||PROFS[pi],weight=p.w,fat=weight*p.bf,lbm=weight-fat,musT0=lbm*(p.sex==='M'?.46:.40);
   const mus=MFRAC.map(f=>({lastEnd:-1e9,mass:musT0*f,mass0:musT0*f,pk:musT0*f,dmg:0,last:-9,inj:0,fat:0,peak:0}));
   const bmr0=370+21.6*lbm;   // Katch-McArdle para o ponto de partida
-  const s={prof:p,pi,day:1,wd:0,fat,other:lbm-musT0,mus,neural:MFRAC.map(()=>1),R:bmr0-13*musT0-4.5*fat,
+  const s={fx:{days:fdays('ab'),weeks:12,pg:0},prof:p,pi,day:1,wd:0,fat,other:lbm-musT0,mus,neural:MFRAC.map(()=>1),R:bmr0-13*musT0-4.5*fat,
     shock:0,afterShock:false,techLoad:0,clock:0,mobToday:0,mob:mobBase(p),wsets:MFRAC.map(()=>[0,0,0,0,0,0,0]),vload:MFRAC.map(()=>[0,0,0,0,0,0,0]),warm:MFRAC.map(()=>-9),fatigue:0,deload:0,reb:0,since:0,cal:0,prot:1.6,xp:0,lvl:1,sets:0,sessionKcal:0,hist:[],allUnlocked:false,sleepH:7.5,lastNight:null,w0:weight,bf0:p.bf,bmr0};
   s.cal=Math.round(maint(s)/50)*50;
   s.hist.push({day:1,w:weight,bf:p.bf,bmr:bmr0,tdee:bmr0*1.15+0.1*s.cal,mus:musT0});
@@ -817,7 +826,7 @@ function finishSet(how){
     if(warmSet){exs.forEach(x=>{S.warm[EX[x].m]=S.day;});}
     else{
       const cnt=1+.5*(w.drops+w.pauses);setsAdd=cnt;
-      exs.forEach(x=>{const e=EX[x];S.wsets[e.m][0]+=cnt;for(const [si,fr] of e.sec)S.wsets[si][0]+=cnt*fr*.5;S.vload[e.m][0]+=w.vl;});
+      exs.forEach(x=>{const e=EX[x];S.wsets[e.m][0]+=cnt;for(const [si,fr] of e.sec)S.wsets[si][0]+=cnt*fr;S.vload[e.m][0]+=w.vl;});
     }
   }
   const xp=Math.round((reps*3+avgForm*20+(w.tech!=='norm'?15:0)+(w.perfects||0))*0.6);
@@ -870,7 +879,7 @@ function endDay(h){
   S.lastNight=NIGHT;
   // fadiga acumulada: cada série injeta fadiga, o sono e o deload aceleram a dissipação
   const dsets=S.wsets.reduce((a,v)=>a+v[0],0);
-  S.fatigue=clamp(S.fatigue*(S.deload>0?.78:.9)+dsets*1.6*(S.deload>0?.5:1)*(S.shock>0?1.25:1)+S.techLoad*1.2+(h<6.5?4:0)-(h>=7.5?1:0),0,100);
+  S.fatigue=clamp(S.fatigue*(S.deload>0?.78:.9)+dsets*1.15*(S.deload>0?.5:1)*(S.shock>0?1.25:1)+S.techLoad*1.2+(h<6.5?4:0)-(h>=7.5?1:0),0,100);
   S.techLoad=0;
   if(S.shock>0){S.shock--;if(S.shock===0)S.afterShock=true;}
   S.mus.forEach(m=>{m.lastEnd=-1e9;});
@@ -930,6 +939,7 @@ function handleScreen(){
     else if(act==='nutri'){go('nutri');sel='cm';}
     else if(act==='body'){BODYPG=0;go('body');sel='bk';}
     else if(act==='plan'){go('plan');sel='plback';}
+    else if(act==='ficha'){FD=0;go('ficha');sel='fd0';}
     else if(act==='mob'){MOB=null;go('mob');sel='mj0';}
     else if(act==='sleep'){go('sleep');sel='s2';}
     if(pressed('KeyU')){S.allUnlocked=true;say('TODAS AS TÉCNICAS LIBERADAS',C.acc2);}
@@ -956,6 +966,22 @@ function handleScreen(){
       if(act&&act[0]==='m'&&act[1]==='j'&&S.mobToday<3)MOB={j:+act[2],t:0,st:'run',inz:0,n:0,v:0,g:.5};
       else if(act==='mback'||back){go('hub');sel='train';}
     }
+  }
+  else if(scr==='ficha'){
+    const fx=S.fx;let m;
+    if(act){
+      if(m=/^fd(\d)$/.exec(act))FD=+m[1];
+      else if(m=/^f([mp])(\d)$/.exec(act)){const it=fx.days[FD][+m[2]];it.n=clamp(it.n+(m[1]==='p'?1:-1),0,6);}
+      else if(m=/^fc(\d)$/.exec(act)){const it=fx.days[FD][+m[1]];it.p=(it.p+1)%4;}
+      else if(m=/^pr(\d)$/.exec(act)){fx.days=fdays(['ini','ab','av','none'][+m[1]]);}
+      else if(act==='fw'){fx.weeks=fx.weeks>=24?4:fx.weeks===4?8:fx.weeks===8?12:24;}
+      else if(act==='fgo'){projectFicha(fx.weeks);go('proj');sel='pback';return;}
+    }
+    if(back){go('hub');sel='train';}
+  }
+  else if(scr==='proj'){
+    if(act==='pgt')S.fx.pg=S.fx.pg?0:1;
+    if(act==='pback'||back){go('ficha');sel='fgo';}
   }
   else if(scr==='plan'){
     if(act==='shock'&&S.shock<=0&&S.deload<=0){S.shock=14;S.afterShock=false;say('SEMANA DE CHOQUE: 14 DIAS',C.org);}
@@ -1005,10 +1031,12 @@ function render(){
   else if(scr==='nutri')rNutri();
   else if(scr==='sleep')rSleep();
   else if(scr==='plan')rPlan();
+  else if(scr==='ficha')rFicha();
+  else if(scr==='proj')rProj();
   else if(scr==='mob')rMob();
   else if(scr==='night')rNight();
   else if(scr==='body')rBody();
-  if(['select','custom','tsetup','nutri','sleep','body','result','plan','mob'].includes(scr))button('__back',W-48,2,46,12,'VOLTAR');
+  if(['select','custom','tsetup','nutri','sleep','body','result','plan','mob','ficha','proj'].includes(scr))button('__back',W-48,2,46,12,'VOLTAR');
   if(toast){const a=Math.min(1,toast.life/20);ctx.globalAlpha=a;box(W/2-150,4,300,16,'#101430',C.acc);T(toast.t,W/2,9,toast.c,'c');ctx.globalAlpha=1;}
 }
 let TITLE_ST=null;
@@ -1090,9 +1118,10 @@ function rHub(){
   button('train',132,20,78,22,'TREINAR');
   button('nutri',214,20,86,22,'NUTRIÇÃO');
   button('mob',304,20,72,22,'MOBILID.');
-  button('body',132,46,78,22,'CORPO');
-  button('plan',214,46,86,22,'PLANILHA');
-  button('sleep',304,46,72,22,'DORMIR',{sub:''});
+  button('body',132,46,56,22,'CORPO');
+  button('plan',192,46,64,22,'PLANILHA');
+  button('ficha',260,46,52,22,'FICHA');
+  button('sleep',316,46,60,22,'DORMIR',{sub:''});
   panel(132,72,244,88,'MÚSCULOS: RECUPERAÇÃO E FORÇA');
   S.mus.forEach((m,i)=>{
     const y=86+i*10.3,ex=EX[i],st=exStatus(i);
@@ -1292,6 +1321,95 @@ function rMob(){
   TL('ARTICULAÇÃO TRAVADA FAZ A VIZINHA COMPENSAR: QUADRIL PRESO SOBRECARREGA A LOMBAR.',14,185,46,C.dim,9);
   button('mback',300,190,70,14,'OK');
 }
+// ---------- FICHA: monta a semana e projeta a evolução com o mesmo modelo do jogo ----------
+let FD=0,PROJ=null;
+function planSets(i,fx=S.fx){let n=0;for(const d of fx.days)d.forEach((it,k)=>{if(!it.n)return;const ex=EX[k];if(ex.m===i)n+=it.n;for(const [si,fr] of ex.sec)if(si===i)n+=it.n*fr;});return n;}
+function simSet(i,pct,toFail){
+  const ex=EX[i],m=S.mus[ex.m],rmc=rm(ex),load=round05(rmc*pct),warm=pct<=.4;
+  const lr2=load/Math.max(1,rmc*(1-m.fat*.3)),form=.82*(.85+.15*mobF(i));
+  let St=clamp((1-m.fat*.8-m.dmg/250)*Math.min(1,.82+.045*carbKg(S)),.2,1);
+  const cost=(0.028+0.17*lr2*lr2)*(1+(1-form)*.4);let reps=0,dm=0;
+  while(reps<40){
+    if(St<=.04)break;
+    if(!toFail&&St-cost<cost*2)break;
+    reps++;dm+=(0.35+0.65*(1-St))*Math.pow(form,1.5)*(lr2<.3?.4:1)*3.4*(warm?.5:1)*(S.lvl<=3?1.2:1);St=Math.max(0,St-cost);
+  }
+  if(!reps)return;
+  m.dmg=Math.min(100,m.dmg+dm);m.last=S.day;m.peak=Math.max(m.peak,m.dmg);m.fat=Math.min(1,m.fat+(1-St)*.35);
+  for(const [si,fr] of ex.sec){const q=S.mus[si];q.dmg=Math.min(100,q.dmg+dm*fr);q.last=S.day;q.peak=Math.max(q.peak,q.dmg);}
+  S.sessionKcal+=reps*(4+load*.12)+20;S.sets++;S.warm[ex.m]=S.day;
+  if(!warm){S.wsets[ex.m][0]+=1;for(const [si,fr] of ex.sec)S.wsets[si][0]+=fr;S.vload[ex.m][0]+=load*reps;}
+  S.xp+=Math.round((reps*3+form*20)*.6);S.lvl=lvlOf(S.xp);
+  S.neural[ex.m]=Math.min(1.8,S.neural[ex.m]+.012*(.4+form)*(S.day<=28?1.8:1));
+}
+function projectFicha(weeks){
+  const sv={S,scr,NIGHT,tipI,sel,tick,toast,z:SND.zzz,l:SND.lvl};
+  SND.zzz=()=>{};
+  const s0=JSON.parse(JSON.stringify(S));S=JSON.parse(JSON.stringify(S));
+  const rows=[],sets=Array(7).fill(0);let deloads=0;
+  try{
+    for(let d=0;d<weeks*7;d++){
+      if(needDeload(S)){S.deload=7;S.since=0;S.shock=0;S.afterShock=false;deloads++;}
+      const mul=S.deload>0?.5:1;
+      S.fx.days[S.wd].forEach((it,k)=>{if(!it.n)return;const n=Math.max(1,Math.round(it.n*mul));for(let q=0;q<n;q++)simSet(k,FZ[it.p],q===n-1&&S.deload<=0);});
+      S.wsets.forEach((a,i)=>{sets[i]+=a[0];});
+      endDay(S.sleepH||7.5);
+      rows.push({bal:NIGHT?NIGHT.bal:0,w:weight(S),bf:bf(S),mus:musT(S),fat:S.fatigue,lvl:S.lvl,dl:S.deload>0});
+    }
+    const s1=S;
+    PROJ={weeks,rows,s0,s1,sets:sets.map(v=>v/weeks),deloads,rm0:EX.map(e=>rm(e,s0)),rm1:EX.map(e=>rm(e,s1)),m0:s0.mus.map(m=>m.mass),m1:s1.mus.map(m=>m.mass)};
+  }finally{S=sv.S;scr=sv.scr;NIGHT=sv.NIGHT;tipI=sv.tipI;sel=sv.sel;tick=sv.tick;toast=sv.toast;SND.zzz=sv.z;}
+}
+function zoneShort(i,n){const L=landm(S,i);return n<=0?{t:'-',c:C.dim}:n<L[1]?{t:'BAIXO',c:C.blu}:n<=L[2]?{t:'ÓTIMO',c:C.grn}:n<=L[3]?{t:'ALTO',c:C.org}:{t:'EXCESSO',c:C.red};}
+function rFicha(){
+  drawGym(true);R(0,0,W,H,'rgba(0,0,0,.55)');
+  const fx=S.fx;panel(4,16,376,196,'FICHA DE TREINO: MONTE A SEMANA');
+  for(let d=0;d<7;d++){const n=fx.days[d].reduce((a,b)=>a+b.n,0);button('fd'+d,8,30+d*25,64,21,WD[d],{act:FD===d,al:'l',sub:n?n+'S':'-'});}
+  T(WD[FD]+': EXERCÍCIO / SÉRIES / CARGA',80,31,C.acc);
+  EX.forEach((e,i)=>{const it=fx.days[FD][i],y=42+i*24;
+    T(e.n,80,y+6,it.n?C.txt:C.dim);
+    button('fm'+i,176,y,16,19,'-');T(String(it.n),200,y+6,it.n?C.acc2:C.dim,'c');button('fp'+i,208,y,16,19,'+');
+    button('fc'+i,228,y,36,19,Math.round(FZ[it.p]*100)+'%',{dis:!it.n});});
+  button('pr0',270,30,106,14,'INICIANTE 3X');button('pr1',270,46,106,14,'A/B 4X');button('pr2',270,62,106,14,'AVANÇADO 5X');button('pr3',270,78,106,14,'LIMPAR');
+  button('fgo',270,96,106,20,'PROJETAR');button('fw',270,118,106,14,'PERÍODO: '+fx.weeks+' SEM');
+  T('SÉRIES POR SEMANA',274,141,C.dim);
+  MUSC.forEach((nm,i)=>{const n=planSets(i),z=zoneShort(i,n);T(nm.slice(0,5)+' '+n.toFixed(0),274,152+i*8.7,z.c);T(z.t,372,152+i*8.7,z.c,'r');});
+}
+function rProj(){
+  drawGym(true);R(0,0,W,H,'rgba(0,0,0,.6)');
+  const P=PROJ,fx=S.fx;panel(4,16,376,196,'PROJEÇÃO EM '+P.weeks+' SEMANAS');
+  button('pgt',236,2,56,12,fx.pg?'GRÁFICO':'MÚSCULOS');button('pback',8,196,60,12,'FICHA');
+  const L=P.rows,n=L.length;
+  const spark=(x,y,w,h,k,col,lab,a,b,fmt)=>{
+    const v=L.map(r=>r[k]),mn=Math.min(...v),mx=Math.max(...v),sp=Math.max(1e-6,mx-mn);
+    R(x,y,w,h,C.out);R(x+1,y+1,w-2,h-2,'#16246a');
+    let px=null,py=null;
+    for(let q=0;q<w-4;q++){const i=Math.round(q/(w-5)*(n-1)),cx=x+2+q,cy=y+h-3-(v[i]-mn)/sp*(h-6);if(px!==null)lineMain(px,py,cx,cy,col);px=cx;py=cy;}
+    for(let i=0;i<n;i++)if(L[i].dl){R(x+2+Math.round(i/(n-1)*(w-5)),y+h-2,1,1,C.blu);}
+    T(lab,x,y-9,C.txt);T(fmt(a)+' > '+fmt(b),x+w,y-9,col,'r');};
+  if(!fx.pg){
+    spark(10,40,214,28,'w',C.acc,'PESO KG',L[0].w,L[n-1].w,v=>v.toFixed(1));
+    spark(10,82,214,28,'mus',C.acc2,'MÚSCULO KG',P.s0.mus.reduce((a,m)=>a+m.mass,0),L[n-1].mus,v=>v.toFixed(1));
+    spark(10,124,214,28,'bf',C.org,'GORDURA %',bf(P.s0)*100,L[n-1].bf*100,v=>(v<1?v*100:v).toFixed(1));
+    spark(10,166,214,26,'fat',C.red,'FADIGA',0,L[n-1].fat,v=>Math.round(v)+'%');
+    T('ANTES',266,38,C.dim,'c');T('DEPOIS',338,38,C.dim,'c');
+    figFront(266,120,.45,P.s0,{expr:0});figFront(338,120,.45,P.s1,{expr:3});
+    T(weight(P.s0).toFixed(1)+' KG',266,124,C.txt,'c');T(weight(P.s1).toFixed(1)+' KG',338,124,C.txt,'c');
+    T((bf(P.s0)*100).toFixed(0)+'% GORD',266,134,C.dim,'c');T((bf(P.s1)*100).toFixed(0)+'% GORD',338,134,C.dim,'c');
+    T('NÍVEL '+P.s0.lvl+' > '+P.s1.lvl,302,148,C.acc,'c');
+    T('DELOADS AUTOMÁTICOS: '+P.deloads,302,160,C.blu,'c');
+    {const mb=L.reduce((a,r)=>a+r.bal,0)/n;T('SALDO MÉDIO '+(mb>=0?'+':'')+Math.round(mb)+' KCAL/DIA',302,172,mb<-150?C.red:mb>150?C.org:C.grn,'c');}
+    T('NÃO É PRESCRIÇÃO',302,186,C.dim,'c');
+  }else{
+    T('MÚSCULO',12,30,C.dim);T('SÉRIES',70,30,C.dim);T('ZONA',120,30,C.dim);T('MASSA',190,30,C.dim);T('FORÇA (KG)',256,30,C.dim);
+    MUSC.forEach((nm,i)=>{const y=44+i*18,z=zoneShort(i,P.sets[i]),dg=(P.m1[i]-P.m0[i])*1000;
+      T(nm,12,y,C.txt);T(P.sets[i].toFixed(1),70,y,z.c);T(z.t,120,y,z.c);
+      T((dg>=0?'+':'')+Math.round(dg)+' G',190,y,dg>0?C.acc2:C.dim);
+      T(P.rm0[i].toFixed(0)+' > '+P.rm1[i].toFixed(0),256,y,C.txt);
+      bar(322,y-1,50,7,clamp((P.rm1[i]/Math.max(1,P.rm0[i])-1)/1.2,0,1),C.acc2);});
+    TL('ACIMA DO LIMITE QUE VOCÊ RECUPERA ENTRA DELOAD AUTOMÁTICO. A FORÇA SOBE MAIS NO COMEÇO (ADAPTAÇÃO NEURAL).',12,170,56,C.dim,9);
+  }
+}
 function rPlan(){
   drawGym(true);R(0,0,W,H,'rgba(0,0,0,.55)');
   panel(8,18,368,190,'PLANILHA DE VOLUME · SEMANA '+meso(S)+' DO CICLO');
@@ -1404,7 +1522,7 @@ function frame(now){
 }
 window.__gym={get S(){return S;},get scr(){return scr;},get WK(){return WK;},get NIGHT(){return NIGHT;},get RES(){return RES;},get TS(){return TS;},
   step(n=1){for(let i=0;i<n;i++)update();},render,go,setHold(v){testHold=v;},makeState,endDay,startWorkout,sel:()=>sel,
-  setS(s){S=s;},get MOB(){return MOB;},mobF,landm,wk7,restPct,bmr:()=>bmr(S),weight:()=>weight(S),bf:()=>bf(S)};
+  setS(s){S=s;},get MOB(){return MOB;},projectFicha,get PROJ(){return PROJ;},fdays,planSets,mobF,landm,wk7,restPct,bmr:()=>bmr(S),weight:()=>weight(S),bf:()=>bf(S)};
 requestAnimationFrame(frame);
 })();
 </script>
