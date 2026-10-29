@@ -188,13 +188,14 @@ EX.push(
   {n:'CRUCIFIXO',m:0,sec:[],coef:7,pose:'bench'},
   {n:'PUXADA FRENTE',m:1,sec:[[3,.5]],coef:9,pose:'row'},
   {n:'REMADA BAIXA',m:1,sec:[[3,.5]],coef:9,pose:'row'},
-  {n:'ELEVAÇÃO LATERAL',m:2,sec:[],coef:5,pose:'press'},
+  {n:'ELEVAÇÃO LATERAL',m:2,sec:[],coef:5,pose:'lat'},
   {n:'ROSCA MARTELO',m:3,sec:[],coef:12,pose:'curl'},
   {n:'TRÍCEPS PULLEY',m:4,sec:[],coef:10,pose:'tri'},
   {n:'LEG PRESS',m:5,sec:[],coef:14,pose:'squat'},
   {n:'CADEIRA EXTENSORA',m:5,sec:[],coef:6,pose:'squat'},
   {n:'AFUNDO',m:5,sec:[],coef:6,pose:'squat'},
-  {n:'ABDOMINAL INFRA',m:6,sec:[],coef:6,pose:'crunch'});
+  {n:'ABDOMINAL INFRA',m:6,sec:[],coef:6,pose:'crunch'},
+  {n:'PANTURRILHA EM PÉ',m:5,sec:[],coef:5,pose:'calf'});
 const ANTAG={0:1,1:0,3:4,4:3};
 const TECH=[
   {id:'norm',n:'NORMAL',lv:1,d:'SÉRIE ATÉ A FALHA. É A BASE DE TUDO.'},
@@ -499,7 +500,15 @@ function pose(kind,t,cx,o={}){
   const P={kind,eq:null},lean=o.lean||0;
   const stand=()=>{P.A=[cx,FL-5];P.K=[cx+1.5,P.A[1]-LB.sh];P.Hp=[cx-lean*7,P.K[1]-LB.th];P.S=[P.Hp[0]-Math.sin(lean)*LB.to,P.Hp[1]-Math.cos(lean)*LB.to];};
   const head=(d=17)=>{const u=[P.S[0]-P.Hp[0],P.S[1]-P.Hp[1]],l=Math.hypot(u[0],u[1]);P.U=[u[0]/l,u[1]/l];P.Hd=[P.S[0]+P.U[0]*d+1.5,P.S[1]+P.U[1]*d];};
-  if(kind==='curl'){
+  if(kind==='calf'){
+    stand();P.A[1]-=t*5;P.K[1]-=t*5;P.Hp[1]-=t*5;P.S[1]-=t*5;head();
+    P.E=[P.S[0]+1,P.S[1]+LB.ua];P.Wr=[P.E[0]+1,P.E[1]+LB.fa];P.E2=P.E;P.W2=P.Wr;P.eq={t:'db',x:P.Wr[0],y:P.Wr[1]};
+  }else if(kind==='lat'){
+    stand();head();
+    const a=.15+t*1.35,r=LB.ua+LB.fa-2;
+    P.E=[P.S[0]+LB.ua*Math.sin(a),P.S[1]+LB.ua*Math.cos(a)];P.Wr=[P.S[0]+r*Math.sin(a),P.S[1]+r*Math.cos(a)];
+    P.E2=[P.S[0]+1,P.S[1]+LB.ua];P.W2=[P.E2[0]+1,P.E2[1]+LB.fa];P.eq={t:'db',x:P.Wr[0],y:P.Wr[1]};
+  }else if(kind==='curl'){
     stand();head();
     const E=[P.S[0]+3+3*t,P.S[1]+LB.ua],a=.12+t*2.4;P.E=E;P.Wr=[E[0]+LB.fa*Math.sin(a),E[1]+LB.fa*Math.cos(a)];
     P.E2=[P.S[0]+1,P.S[1]+LB.ua];P.W2=[P.E2[0]+1,P.E2[1]+LB.fa];P.eq={t:'db',x:P.Wr[0],y:P.Wr[1]};
@@ -1411,7 +1420,7 @@ function zoneShort(i,n){const L=landm(S,i);return n<=0?{t:'-',c:C.dim}:n<L[1]?{t
 const nrm=t=>t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const DAYRX=/^\s*(segunda|seg|terca|ter|quarta|qua|quinta|qui|sexta|sex|sabado|sab|domingo|dom)(-feira)?\s*[:\-–]\s*(.*)$/;
 const DAYIDX={seg:0,ter:1,qua:2,qui:3,sex:4,sab:5,dom:6};
-const ALIAS=[[/supino.*inclin/,7],[/supino|bench/,0],[/crucifixo|\bfly\b|peck|crossover/,8],[/puxada|pulldown|pull down|barra fixa|pulley frente/,9],[/remada.*(baixa|sentada)/,10],[/remada/,1],[/desenvolvimento|militar/,2],[/elevacao lateral/,11],[/martelo/,12],[/rosca|biceps|scott/,3],[/triceps.*(pulley|corda|polia)|pulley|corda/,13],[/triceps|frances|testa/,4],[/leg ?press/,14],[/extensora/,15],[/afundo|avanco|passada|bulgaro/,16],[/agacha|squat|hack/,5],[/infra/,17],[/abdominal|abdomen|prancha|crunch/,6]];
+const ALIAS=[[/supino.*inclin/,7],[/supino|bench/,0],[/crucifixo|\bfly\b|peck|crossover/,8],[/puxada|pulldown|pull down|barra fixa|pulley frente/,9],[/remada.*(baixa|sentada)/,10],[/remada/,1],[/desenvolvimento|militar/,2],[/elevacao lateral/,11],[/martelo/,12],[/rosca|biceps|scott/,3],[/triceps.*(pulley|corda|polia)|pulley|corda/,13],[/triceps|frances|testa/,4],[/leg ?press/,14],[/extensora/,15],[/afundo|avanco|passada|bulgaro/,16],[/agacha|squat|hack/,5],[/infra/,17],[/panturrilha|gemeo|calf/,18],[/abdominal|abdomen|prancha|crunch/,6]];
 const MKEY=[[/peito|peitoral/,0],[/costas|dorsal/,1],[/ombro|deltoide/,2],[/biceps/,3],[/triceps/,4],[/perna|coxa|quadriceps|gluteo|posterior|panturrilha|femoral/,5],[/abdomen|abdominal|core/,6]];
 const MPOSE=['bench','row','press','curl','tri','squat','crunch'],MCOEF=[12,8,9,10,9,10,6];
 function parseItem(raw){
@@ -1428,7 +1437,8 @@ function resolveEx(it,notes){
   const ex=EX.findIndex(e=>nrm(e.n)===it.name);if(ex>=0)return ex;
   let m=-1;for(const [rx,k] of MKEY)if(rx.test(it.hint+' '+it.name)){m=k;break;}
   if(m<0||!it.name){notes.push('NÃO ENTENDI "'+it.raw.slice(0,24).toUpperCase()+'". ESCREVA O MÚSCULO ENTRE PARÊNTESES.');return -1;}
-  EX.push({n:it.name.toUpperCase().slice(0,22),m,sec:[],coef:MCOEF[m],pose:MPOSE[m],custom:true});
+  const pz=/panturrilha|gemeo|calf/.test(it.name)?'calf':/lateral|abdu/.test(it.name)?'lat':MPOSE[m];
+  EX.push({n:it.name.toUpperCase().slice(0,22),m,sec:[],coef:MCOEF[m],pose:pz,custom:true});
   notes.push('CRIEI "'+EX[EX.length-1].n+'" ('+MUSC[m]+').');return EX.length-1;
 }
 function parseFicha(text){

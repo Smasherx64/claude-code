@@ -93,6 +93,8 @@ No hub há o botão **FICHA**. Nela você monta a semana: escolhe o dia, **adici
 
 **Escrever a ficha:** o botão **ESCREVER** abre um campo de texto já preenchido com a sua ficha atual. Você pode editar ou escrever do zero, um dia por bloco (`Segunda:` e, embaixo, `supino 4x10`). O jogo entende nomes comuns (supino, remada, puxada, agachamento, leg press, afundo, rosca, tríceps corda...), `bi-set`, `super-set`, `drop set` e `rest-pause` (a técnica vale com a linha de baixo no bi-set e no super-set) e a junção com `+` (`supino 4x10 + remada 4x10`). As repetições definem a carga: até 6 viram 85%, até 10 viram 70% e acima disso 55%. Exercício que não está no catálogo é criado se você escrever o músculo entre parênteses (`panturrilha em pé (pernas) 4x15`). O que o jogo não entendeu aparece num aviso.
 
+**Execução dos exercícios:** todo exercício tem uma animação. Os 7 originais e a panturrilha em pé e a elevação lateral têm a sua própria. Os demais reaproveitam a mais parecida (o crucifixo usa o movimento do supino, o leg press e o afundo usam o do agachamento). Exercício criado por você usa a animação do músculo, ou a da panturrilha ou da elevação lateral quando o nome indica.
+
 Os exercícios novos também aparecem na escolha do treino (botão "MAIS EXERCÍCIOS") e usam as mesmas animações de execução dos exercícios básicos.
 
 ## Ciência do treino (baseada nos materiais de referência)
