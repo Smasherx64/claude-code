@@ -4,6 +4,10 @@ Simulador de treino e evolução corporal em pixel art (HTML5 canvas, arquivo ú
 
 Abra `index.html` no navegador. Teclado ou mouse/toque.
 
+## Seu personagem com altura e peso reais
+
+Na seleção, **CRIAR O MEU PERSONAGEM** pede sexo, altura (140-210 cm), peso (35-200 kg) e idade (16-70), e deixa escolher pele, cabelo, cor do cabelo e roupa. O jogo estima a gordura corporal pela fórmula de Deurenberg (1,2 x IMC + 0,23 x idade - 10,8 x [1 se homem] - 5,4), mostra o IMC e o gasto basal estimado e avisa se os valores forem extremos. É uma estimativa, não um diagnóstico.
+
 ## Os quatro pontos de partida
 
 | | Peso | Gordura | Músculo | Gasto basal |
@@ -13,7 +17,7 @@ Abra `index.html` no navegador. Teclado ou mouse/toque.
 | Caio (homem, mais gordura) | 118 kg | 38% | 33,7 kg | 1950 kcal |
 | Davi (homem, muito magro) | 56 kg | 12% | 22,7 kg | 1434 kcal |
 
-O desenho do personagem muda com a gordura corporal e com a massa de cada grupo muscular.
+O visual é simples e colorido (cabeção, corpo redondinho, contorno limpo), com personagens originais. O corpo muda com a gordura corporal (barriga, rosto, coxas) e com a massa de cada grupo muscular (braços, pernas, peito e costas).
 
 ## Como se joga
 
