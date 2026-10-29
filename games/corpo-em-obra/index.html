@@ -230,12 +230,14 @@ const RITMO=3;                 // aceleração do jogo: 1 dia de jogo muda o cor
 // ============ estado ============
 let S=null,scr='title',sel=null,btns=[],tick=0,toast=null,tipI=0;
 const stateCache=[];
+// mobilidade/estabilidade por articulação (tornozelo, quadril, tórax, ombro, lombar): pior com mais gordura e idade
+function mobBase(p){const b=clamp(72-((p.bf||.2)-.2)*70-Math.max(0,(p.age||28)-25)*.6,30,85);return[b-8,b-12,b-10,b-4,b-6].map(v=>clamp(v,15,90));}
 function makeState(pi,prof){
   const p=prof||PROFS[pi],weight=p.w,fat=weight*p.bf,lbm=weight-fat,musT0=lbm*(p.sex==='M'?.46:.40);
-  const mus=MFRAC.map(f=>({mass:musT0*f,mass0:musT0*f,pk:musT0*f,dmg:0,last:-9,inj:0,fat:0,peak:0}));
+  const mus=MFRAC.map(f=>({lastEnd:-1e9,mass:musT0*f,mass0:musT0*f,pk:musT0*f,dmg:0,last:-9,inj:0,fat:0,peak:0}));
   const bmr0=370+21.6*lbm;   // Katch-McArdle para o ponto de partida
   const s={prof:p,pi,day:1,wd:0,fat,other:lbm-musT0,mus,neural:MFRAC.map(()=>1),R:bmr0-13*musT0-4.5*fat,
-    wsets:MFRAC.map(()=>[0,0,0,0,0,0,0]),vload:MFRAC.map(()=>[0,0,0,0,0,0,0]),warm:MFRAC.map(()=>-9),fatigue:0,deload:0,reb:0,since:0,cal:0,prot:1.6,xp:0,lvl:1,sets:0,sessionKcal:0,hist:[],allUnlocked:false,sleepH:7.5,lastNight:null,w0:weight,bf0:p.bf,bmr0};
+    shock:0,afterShock:false,techLoad:0,clock:0,mobToday:0,mob:mobBase(p),wsets:MFRAC.map(()=>[0,0,0,0,0,0,0]),vload:MFRAC.map(()=>[0,0,0,0,0,0,0]),warm:MFRAC.map(()=>-9),fatigue:0,deload:0,reb:0,since:0,cal:0,prot:1.6,xp:0,lvl:1,sets:0,sessionKcal:0,hist:[],allUnlocked:false,sleepH:7.5,lastNight:null,w0:weight,bf0:p.bf,bmr0};
   s.cal=Math.round(maint(s)/50)*50;
   s.hist.push({day:1,w:weight,bf:p.bf,bmr:bmr0,tdee:bmr0*1.15+0.1*s.cal,mus:musT0});
   return s;
@@ -252,7 +254,7 @@ const lvlOf=xp=>{let l=1;for(let i=0;i<XPT.length;i++)if(xp>=XPT[i])l=i+1;return
 // Marcos de volume semanal (MV, MEV, MAV, MRV) por faixa de nível e músculo. Faixas em séries/semana por grupo:
 // iniciante até ~12, intermediário até ~24, avançado até ~30-35 (Enciclopédia do Treinamento; Prestes et al.)
 const LANDB=[[3,5,9,12],[5,9,16,24],[7,12,22,32]],LANDM=[1,1.15,1,.7,.7,1.2,.7];
-function landm(s,i){const t=s.lvl<=3?0:s.lvl<=6?1:2;return LANDB[t].map(v=>Math.round(v*LANDM[i]));}
+function landm(s,i){const t=s.lvl<=3?0:s.lvl<=6?1:2,sh=s.shock>0?1.2:1;return LANDB[t].map((v,k)=>Math.round(v*LANDM[i]*(k>=2?sh:1)));}
 const wk7=(s,i)=>s.wsets[i].reduce((a,b)=>a+b,0);
 function volFactor(s,i){
   const L=landm(s,i),n=wk7(s,i);
@@ -266,7 +268,15 @@ function zoneOf(s,i){const L=landm(s,i),n=wk7(s,i);return s.deload>0?{t:'DELOAD'
 const fatPen=s=>s.fatigue>60?.12*(s.fatigue-60)/40:0;
 const carbKg=s=>Math.max(0,(s.cal-4*s.prot*weight(s)-9*.9*weight(s))/4/weight(s));
 const meso=s=>Math.floor((s.day-1)/7)+1;
-const needDeload=s=>s.deload<=0&&(s.fatigue>75||s.since>=28);
+const needDeload=s=>s.deload<=0&&(s.fatigue>75||s.since>=28||s.afterShock);
+const MOBN=['TORNOZELO','QUADRIL','TÓRAX','OMBRO','LOMBAR'];
+const MOBT=['MOBILIDADE','MOBILIDADE','MOBILIDADE','MOBILIDADE','ESTABILIDADE'];
+const MOBD=['TORNOZELO NA PAREDE','GLÚTEO DEITADO','ROTAÇÃO TORÁCICA','MOBILIDADE DE OMBRO','PRANCHA LATERAL'];
+const MOBX=['AGACHAMENTO','AGACHAMENTO E STIFF','REMADA, SUPINO, DESENV.','SUPINO, DESENV., TRÍCEPS','AGACH., REMADA, ABDOM.'];
+const EXJ=[[3,2],[2,4],[3,2],[],[3],[0,1,4],[4]];
+const mobF=(i,s=S)=>{const j=EXJ[i];return j.length?j.reduce((a,k)=>a+s.mob[k],0)/j.length/100:1;};
+const mobSt=v=>v>=75?{t:'EXCELENTE',c:C.grn}:v>=50?{t:'BOM',c:C.acc}:{t:'RUIM',c:C.red};
+const restPct=i=>{const m=S.mus[EX[i].m];return clamp((S.clock-m.lastEnd)/([0,1,2,5].includes(i)?150:90),0,1);};
 const techOpen=t=>S.allUnlocked||S.lvl>=t.lv;
 function exStatus(i){const m=S.mus[EX[i].m];if(m.inj>0)return{t:'LESÃO '+m.inj+'D',c:C.red,ok:false};if(m.dmg>60)return{t:'MUITO DOLORIDO',c:C.red,ok:true};if(m.dmg>25)return{t:'DOLORIDO',c:C.org,ok:true};if(m.dmg>5)return{t:'RECUPERANDO',c:C.acc,ok:true};return{t:'RECUPERADO',c:C.grn,ok:true};}
 
@@ -680,7 +690,7 @@ let CUS={sex:'F',h:165,w:70,age:28,skin:1,hair:0,hs:0,top:1};
 function customProf(){
   const c=CUS,bmi=c.w/Math.pow(c.h/100,2);
   const bfp=clamp((1.2*bmi+0.23*c.age-10.8*(c.sex==='M'?1:0)-5.4)/100,c.sex==='M'?.06:.14,.55);
-  return{name:'VOCÊ',sex:c.sex,h:c.h,w:c.w,bf:bfp,bmi,skin:SKINS[c.skin],hair:HAIRC[c.hair],hs:HSTY[c.hs],top:TOPC[c.top],bot:'#2f3f7a',tag:'PERSONAGEM',tag2:'SEU CORPO',desc:'SEU PONTO DE PARTIDA, COM ALTURA E PESO REAIS.'};
+  return{name:'VOCÊ',sex:c.sex,h:c.h,w:c.w,bf:bfp,bmi,skin:SKINS[c.skin],hair:HAIRC[c.hair],hs:HSTY[c.hs],top:TOPC[c.top],bot:'#2f3f7a',tag:'PERSONAGEM',age:c.age,tag2:'SEU CORPO',desc:'SEU PONTO DE PARTIDA, COM ALTURA E PESO REAIS.'};
 }
 const TOUCH=(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
 let WK=null,RES=null,NIGHT=null,TS=null,BODYPG=0,NUTSEL=0;
@@ -688,6 +698,7 @@ function startWorkout(cfg){
   const ex=EX[cfg.ex],m=S.mus[ex.m],rmc=rm(ex),load=round05(rmc*cfg.pct);
   WK={cfg,ex,exI:cfg.ex,tech:cfg.tech,stage:1,load,rm:rmc,state:'ready',cd:1.8,t:0,cyc:0,p:0,pv:0,expr:0,v:0,maxP:0,devS:0,devN:0,reps:0,miss:0,
     S:clamp((1-m.fat*0.8-m.dmg/250)*Math.min(1,.82+.045*carbKg(S)),0.25,1),vl:0,forms:[],stim:0,dmg:{},kcal:0,drops:0,pauses:0,fcd:0,pop:[],shake:0,combo:0,best:0,sloppy:false,totalTime:0,sweat:[],sparks:0,perfects:0,startS:0};
+  {const need=(cfg.pct<=.4?45:([0,1,2,5].includes(cfg.ex)?150:90)+(cfg.pct>=.85?40:0)),rf=clamp((S.clock-m.lastEnd)/need,0,1);WK.S=clamp(WK.S*(.78+.22*rf),.2,1);WK.rf=rf;}
   WK.startS=WK.S;go('work');
 }
 function nextExFor(cfg){return cfg.ex2;}
@@ -719,13 +730,14 @@ function wkUpdate(dt){
     if(w.cyc>=L){
       const ok=w.maxP>=.9&&w.p<=.3,avg=w.devS/Math.max(1,w.devN);let form=clamp(1-avg/.26,0,1);
       if(w.sloppy){form*=.6;}
+      const mf=mobF(w.exI);form*=.85+.15*mf;
       if(ok){
         w.reps++;w.forms.push(form);
         const lr2=w.load/Math.max(1,w.rm*(1-S.mus[w.ex.m].fat*.3));
         const cost=(0.028+0.17*lr2*lr2)*(1+(1-form)*.4)*(w.tech==='neg'?1.25:1);
         const wgt=(0.35+0.65*(1-w.S))*Math.pow(form,1.5)*(lr2<.3?.4:1);
         w.S=Math.max(0,w.S-cost);
-        const wu=w.cfg.pct<=.4?.35:1,st=wgt*STIM[w.tech]*wu,dm=wgt*3.4*DMGM[w.tech]*(w.cfg.pct<=.4?.5:1);
+        const wu=w.cfg.pct<=.4?.35:1,st=wgt*STIM[w.tech]*wu,dm=wgt*3.4*DMGM[w.tech]*(w.cfg.pct<=.4?.5:1)*(S.lvl<=3?1.2:1);
         w.stim+=st;w.dmg[w.ex.m]=(w.dmg[w.ex.m]||0)+dm;
         for(const [si,f] of w.ex.sec)w.dmg[si]=(w.dmg[si]||0)+dm*f;
         w.kcal+=4+w.load*.12;w.vl+=w.load;w.sparks=Math.min(14,w.sparks+Math.ceil(dm*.6));
@@ -734,7 +746,7 @@ function wkUpdate(dt){
         else{w.combo=0;w.pop.push({t:'FORMA RUIM',c:C.org,life:45});SND.ok();}
         w.best=Math.max(w.best,w.combo);w.miss=0;w.sloppy=false;
         // risco de lesão: carga alta com forma ruim
-        const rk=(S.warm[w.ex.m]===S.day?.5:1.4)*(S.fatigue>80?1.4:1);
+        const rk=(S.warm[w.ex.m]===S.day?.5:1.4)*(S.fatigue>80?1.4:1)*(1.6-.9*mf);
         if(form<.35&&lr2>.8&&Math.random()<.35*rk){injure();return;}
       }else{
         w.miss++;w.combo=0;w.pop.push({t:'SEM AMPLITUDE',c:C.red,life:45});SND.fail();
@@ -792,6 +804,8 @@ function finishSet(how){
   for(const k in w.dmg){const m=S.mus[k];const add=w.dmg[k];m.dmg=Math.min(100,m.dmg+add);m.last=S.day;m.peak=Math.max(m.peak,m.dmg);m.fat=Math.min(1,m.fat+(1-w.S)*.35);dmgAdd[k]=add;}
   S.sessionKcal+=w.kcal+(reps?20:0);S.sets++;
   const warmSet=w.cfg.pct<=.4,exs=[w.cfg.ex];if(w.stage===2)exs.push(w.cfg.ex2);
+  exs.forEach(x=>{S.mus[EX[x].m].lastEnd=S.clock;});
+  if(w.tech!=='norm'&&S.shock<=0&&reps>0)S.techLoad++;
   const est=Math.round(1/(0.028+0.17*Math.pow(w.load/Math.max(1,w.rm*(1-S.mus[w.ex.m].fat*.3)),2)));
   let setsAdd=0;
   if(reps>0){
@@ -802,7 +816,7 @@ function finishSet(how){
     }
   }
   const xp=Math.round((reps*3+avgForm*20+(w.tech!=='norm'?15:0)+(w.perfects||0))*0.6);
-  const pm=w.ex.m;if(reps>0)S.neural[pm]=Math.min(1.8,S.neural[pm]+.012*(.4+avgForm));
+  const pm=w.ex.m;if(reps>0)S.neural[pm]=Math.min(1.8,S.neural[pm]+.012*(.4+avgForm)*(S.day<=28?1.8:1));
   const lvl0=S.lvl;S.xp+=reps?xp:0;S.lvl=lvlOf(S.xp);
   const unlocked=S.lvl>lvl0?TECH.filter(t=>t.lv>lvl0&&t.lv<=S.lvl).map(t=>t.n):[];
   if(S.lvl>lvl0){SND.lvl();say('NÍVEL '+S.lvl+'!'+(unlocked.length?' LIBEROU: '+unlocked.join(', '):''),C.acc);}
@@ -826,7 +840,7 @@ function endDay(h){
       const cap=(38+22*mps)*pf*sf*ef,rep=Math.min(m.dmg,cap);m.dmg-=rep;
       const pot=m.mass0*(S.prof.sex==='M'?1.5:1.45),room=clamp(1-(m.mass-m.mass0)/(pot-m.mass0),0,1);
       const mem=1+clamp((m.pk-m.mass)/m.mass*6,0,.8);
-      const gain=rep*0.00016*m.mass*noviceMult*RITMO*Math.pow(room,1.2)*volFactor(S,i)*mem*(S.reb>0?1.1:1)*(S.fatigue>80?.85:1);
+      const gain=rep*0.00016*m.mass*noviceMult*RITMO*Math.pow(room,1.2)*volFactor(S,i)*mem*(S.reb>0?1.1:1)*(S.shock>0?1.12:1)*(S.fatigue>80?.85:1)*clamp(.6+.4*S.day/28,.6,1);
       m.mass+=gain;gainTot+=gain;
     }
     if(m.last>0)bump=Math.max(bump,mps*clamp(m.peak/40,0,1));
@@ -851,10 +865,14 @@ function endDay(h){
   S.lastNight=NIGHT;
   // fadiga acumulada: cada série injeta fadiga, o sono e o deload aceleram a dissipação
   const dsets=S.wsets.reduce((a,v)=>a+v[0],0);
-  S.fatigue=clamp(S.fatigue*(S.deload>0?.78:.9)+dsets*1.6*(S.deload>0?.5:1)+(h<6.5?4:0)-(h>=7.5?1:0),0,100);
+  S.fatigue=clamp(S.fatigue*(S.deload>0?.78:.9)+dsets*1.6*(S.deload>0?.5:1)*(S.shock>0?1.25:1)+S.techLoad*1.2+(h<6.5?4:0)-(h>=7.5?1:0),0,100);
+  S.techLoad=0;
+  if(S.shock>0){S.shock--;if(S.shock===0)S.afterShock=true;}
+  S.mus.forEach(m=>{m.lastEnd=-1e9;});
+  {const mb=mobBase(S.prof);S.mob=S.mob.map((v,k)=>Math.max(mb[k]-15,v-(S.mobToday>0?.2:.5)));S.mobToday=0;}
   S.wsets.forEach(a=>{a.unshift(0);a.pop();});S.vload.forEach(a=>{a.unshift(0);a.pop();});
   S.since++;if(S.reb>0)S.reb--;
-  if(S.deload>0){S.deload--;if(S.deload===0){S.reb=7;S.since=0;S.fatigue=Math.min(S.fatigue,25);}}
+  if(S.deload>0){S.deload--;if(S.deload===0){S.reb=7;S.since=0;S.afterShock=false;S.fatigue=Math.min(S.fatigue,25);}}
   NIGHT.fatigue=S.fatigue;NIGHT.ea=ea;
   S.day++;S.wd=(S.wd+1)%7;S.sessionKcal=0;S.sets=0;S.sleepH=h;
   S.hist.push({day:S.day,w:after.w,bf:after.bf,bmr:after.bmr,tdee,mus:after.mus});
@@ -863,8 +881,18 @@ function endDay(h){
 }
 
 // ============ TELAS ============
+let MOB=null;
+function mobUpdate(dt){
+  const m=MOB;m.t+=dt;
+  const g=.5+.26*Math.sin(m.t*1.5),hold=pushHeld();
+  m.v+=((hold?1:0)-m.v)*Math.min(1,3*dt);m.g=g;
+  m.n++;if(Math.abs(m.v-g)<.17)m.inz++;
+  if(m.t>=8){const fr=m.inz/m.n,add=(100-S.mob[m.j])*.14*fr;S.mob[m.j]+=add;S.mobToday++;m.st='done';m.add=add;m.fr=fr;SND.lvl();}
+}
 function update(){
   tick++;
+  if(S&&scr!=='work'&&scr!=='title'&&scr!=='select'&&scr!=='custom')S.clock+=6/60;
+  if(scr==='mob'&&MOB&&MOB.st==='run')mobUpdate(1/60);
   if(toast){toast.life--;if(toast.life<=0)toast=null;}
   if(scr==='work'&&WK){wkUpdate(1/60);}
   else if(scr==='night'&&NIGHT){NIGHT.t++;}
@@ -897,6 +925,7 @@ function handleScreen(){
     else if(act==='nutri'){go('nutri');sel='cm';}
     else if(act==='body'){BODYPG=0;go('body');sel='bk';}
     else if(act==='plan'){go('plan');sel='plback';}
+    else if(act==='mob'){MOB=null;go('mob');sel='mj0';}
     else if(act==='sleep'){go('sleep');sel='s2';}
     if(pressed('KeyU')){S.allUnlocked=true;say('TODAS AS TÉCNICAS LIBERADAS',C.acc2);}
   }
@@ -915,8 +944,17 @@ function handleScreen(){
     if(act==='psup')S.cal=Math.round((M+400)/50)*50;
     if(act==='nback'||back){go('hub');sel='train';}
   }
+  else if(scr==='mob'){
+    if(MOB&&MOB.st==='run'){if(back)MOB=null;}
+    else if(MOB&&MOB.st==='done'){if(act==='mok'||back||pressed('Enter')){MOB=null;sel='mj0';}}
+    else{
+      if(act&&act[0]==='m'&&act[1]==='j'&&S.mobToday<3)MOB={j:+act[2],t:0,st:'run',inz:0,n:0,v:0,g:.5};
+      else if(act==='mback'||back){go('hub');sel='train';}
+    }
+  }
   else if(scr==='plan'){
-    if(act==='deload'&&S.deload<=0){S.deload=7;S.since=0;say('SEMANA DELOAD INICIADA',C.blu);}
+    if(act==='shock'&&S.shock<=0&&S.deload<=0){S.shock=14;S.afterShock=false;say('SEMANA DE CHOQUE: 14 DIAS',C.org);}
+    if(act==='deload'&&S.deload<=0){S.deload=7;S.since=0;S.shock=0;S.afterShock=false;say('SEMANA DELOAD INICIADA',C.blu);}
     if(act==='plback'||back){go('hub');sel='train';}
   }
   else if(scr==='sleep'){
@@ -962,9 +1000,10 @@ function render(){
   else if(scr==='nutri')rNutri();
   else if(scr==='sleep')rSleep();
   else if(scr==='plan')rPlan();
+  else if(scr==='mob')rMob();
   else if(scr==='night')rNight();
   else if(scr==='body')rBody();
-  if(['select','custom','tsetup','nutri','sleep','body','result','plan'].includes(scr))button('__back',W-48,2,46,12,'VOLTAR');
+  if(['select','custom','tsetup','nutri','sleep','body','result','plan','mob'].includes(scr))button('__back',W-48,2,46,12,'VOLTAR');
   if(toast){const a=Math.min(1,toast.life/20);ctx.globalAlpha=a;box(W/2-150,4,300,16,'#101430',C.acc);T(toast.t,W/2,9,toast.c,'c');ctx.globalAlpha=1;}
 }
 let TITLE_ST=null;
@@ -1043,8 +1082,9 @@ function rHub(){
   T('GASTO BASAL '+Math.round(bmr(S)),10,180,C.acc2);
   T('KCAL/DIA',10,190,C.dim);
   const pk=S.lastNight?S.lastNight.parts.bump:0;
-  button('train',132,20,118,22,'TREINAR');
-  button('nutri',254,20,122,22,'NUTRIÇÃO');
+  button('train',132,20,78,22,'TREINAR');
+  button('nutri',214,20,86,22,'NUTRIÇÃO');
+  button('mob',304,20,72,22,'MOBILID.');
   button('body',132,46,78,22,'CORPO');
   button('plan',214,46,86,22,'PLANILHA');
   button('sleep',304,46,72,22,'DORMIR',{sub:''});
@@ -1078,9 +1118,11 @@ function rTsetup(){
     T('DANO: '+S.mus[ex.m].dmg.toFixed(0)+'/100',220,69,exStatus(ci).c);
     {const L=landm(S,ex.m),z=zoneOf(S,ex.m);
     T('SEMANA: '+wk7(S,ex.m).toFixed(0)+' SÉRIES ('+L[1]+'-'+L[3]+')',220,80,z.c);
-    T('AQUECIDO HOJE: '+(S.warm[ex.m]===S.day?'SIM':'NÃO'),220,91,S.warm[ex.m]===S.day?C.grn:C.org);}
-    TL('MÚSCULO MUITO DOLORIDO RENDE MENOS E AUMENTA O RISCO DE LESÃO. ALTERNE OS GRUPOS.',220,104,25,C.dim,9);
-    TL('SEGURE ESPAÇO (OU O MOUSE) PARA SUBIR A CARGA E SOLTE PARA DESCER, SEGUINDO O MARCADOR.',220,142,25,C.txt,9);
+    T('AQUECIDO HOJE: '+(S.warm[ex.m]===S.day?'SIM':'NÃO'),220,91,S.warm[ex.m]===S.day?C.grn:C.org);
+    const rp=restPct(ci);T('DESCANSO: '+Math.round(rp*100)+'%'+(rp<1?' (AGUARDE)':''),220,102,rp>=1?C.grn:C.org);
+    const mf=mobF(ci);T('MOBILIDADE: '+mobSt(mf*100).t,220,113,mobSt(mf*100).c);}
+    TL('MÚSCULO MUITO DOLORIDO RENDE MENOS E AUMENTA O RISCO DE LESÃO.',220,126,25,C.dim,9);
+    TL('SEGURE ESPAÇO (OU O MOUSE) PARA SUBIR E SOLTE PARA DESCER, SEGUINDO O MARCADOR.',220,154,25,C.txt,9);
   }else if(t.step===1){
     const ex=EX[t.ex],rmc=rm(ex);
     panel(8,20,200,186,ex.n);
@@ -1215,6 +1257,36 @@ function rNutri(){
   T('MÍNIMO '+minC+' KCAL. PROCURE UM NUTRICIONISTA.',24,191,C.dim);
   button('nback',310,190,60,14,'OK');
 }
+function rMob(){
+  drawGym(true);R(0,0,W,H,'rgba(0,0,0,.55)');
+  panel(8,18,368,190,'MOBILIDADE E ESTABILIDADE');
+  if(MOB){
+    const m=MOB;T(MOBD[m.j],W/2,36,C.acc,'c');
+    T(m.st==='run'?'SEGURE PARA ALONGAR, SOLTE PARA RELAXAR. SIGA A MARCA.':'FEITO!',W/2,50,C.dim,'c');
+    const bx=48,bw=288,by=84;
+    R(bx-1,by-1,bw+2,18,C.out);R(bx,by,bw,16,'#16246a');
+    R(bx+Math.round(bw*(m.g-.17)),by,Math.round(bw*.34),16,'#2a8a5a');
+    R(bx+Math.round(bw*m.g)-1,by-4,2,24,C.acc);
+    R(bx,by+22,Math.round(bw*clamp(m.v,0,1)),8,m.st==='run'&&Math.abs(m.v-m.g)<.17?C.grn:C.org);
+    bar(bx,120,bw,8,m.t/8,C.blu);
+    if(m.st==='done'){
+      T('NO ALVO: '+Math.round(m.fr*100)+'%',W/2,146,C.txt,'c');
+      T(MOBN[m.j]+' +'+m.add.toFixed(1)+' PONTOS',W/2,158,C.acc2,'c');
+      button('mok',W/2-40,176,80,18,'OK');
+    }
+    return;
+  }
+  S.mob.forEach((v,i)=>{
+    const y=36+i*28,st=mobSt(v);
+    T(MOBN[i],14,y,C.txt);T(MOBT[i],14,y+10,C.dim);
+    bar(100,y-1,110,7,v/100,st.c);T(Math.round(v)+'',216,y,st.c);T(st.t,240,y,st.c);
+    T(MOBX[i],100,y+10,C.dim);
+    button('mj'+i,300,y-4,70,20,'TREINAR',{dis:S.mobToday>=3});
+  });
+  T('SESSÕES HOJE: '+S.mobToday+'/3',14,174,C.txt);
+  TL('ARTICULAÇÃO TRAVADA FAZ A VIZINHA COMPENSAR: QUADRIL PRESO SOBRECARREGA A LOMBAR.',14,185,46,C.dim,9);
+  button('mback',300,190,70,14,'OK');
+}
 function rPlan(){
   drawGym(true);R(0,0,W,H,'rgba(0,0,0,.55)');
   panel(8,18,368,190,'PLANILHA DE VOLUME · SEMANA '+meso(S)+' DO CICLO');
@@ -1230,10 +1302,11 @@ function rPlan(){
   T('MARCAS: MV MANTER · MEV MÍNIMO · MAV ÓTIMO · MRV LIMITE',14,146,C.dim);
   T('FADIGA ACUMULADA',14,158,C.txt);bar(124,157,100,7,S.fatigue/100,S.fatigue>75?C.red:S.fatigue>50?C.org:C.grn);
   T(Math.round(S.fatigue)+'%',230,158,S.fatigue>75?C.red:C.txt);
-  if(S.reb>0)T('REBOTE PÓS-DELOAD: +5% FORÇA, +10% GANHO ('+S.reb+' D)',14,169,C.acc2);
-  else if(S.deload>0)T('DELOAD: VOLUME -40-60%, SEM FALHAR. FADIGA CAINDO.',14,169,C.blu);
-  else TL(needDeload(S)?'FADIGA ALTA OU MUITO TEMPO SEM DELOAD: HORA DE REDUZIR O VOLUME POR 7 DIAS.':'AUMENTE O VOLUME EM 15-30% A CADA 3-6 SEMANAS SE ESTIVER RECUPERANDO BEM.',14,169,56,needDeload(S)?C.red:C.txt,9);
-  button('deload',14,190,170,14,S.deload>0?'DELOAD ATIVO: '+S.deload+' D':'INICIAR SEMANA DELOAD',{dis:S.deload>0});
+  const ph=S.reb>0?['REBOTE PÓS-DELOAD: +5% FORÇA, +10% GANHO ('+S.reb+' D)',C.acc2]:S.deload>0?['DELOAD: VOLUME -40-60%, SEM FALHAR. FADIGA CAINDO.',C.blu]:S.shock>0?['CHOQUE ('+S.shock+' D): MRV +20%, MAIS GANHO, MAIS FADIGA',C.org]:needDeload(S)?['FADIGA ALTA OU CICLO LONGO: FAÇA UM DELOAD',C.red]:['BASE: SUBA 15-30% DO VOLUME A CADA 3-6 SEMANAS',C.txt];
+  T(ph[0],14,169,ph[1]);
+  T(S.lvl<=3?'INICIANTE: 8-12RM, 1-3 SÉRIES, CORPO TODO 2-3X/SEM':S.lvl<=6?'INTERMEDIÁRIO: 8-12RM, MAIS SÉRIES, DIVIDIR 4X/SEM':'AVANÇADO: 1-12RM PERIODIZADO, 3-6 SÉRIES, 4-6X/SEM',14,179,C.dim);
+  button('deload',14,190,120,14,S.deload>0?'DELOAD: '+S.deload+' D':'INICIAR DELOAD',{dis:S.deload>0});
+  button('shock',138,190,130,14,S.shock>0?'CHOQUE: '+S.shock+' D':'INICIAR CHOQUE 14 D',{dis:S.shock>0||S.deload>0||!(S.lvl>=4||S.allUnlocked)||S.fatigue>=50});
   button('plback',300,190,70,14,'OK');
 }
 function rSleep(){
@@ -1326,7 +1399,7 @@ function frame(now){
 }
 window.__gym={get S(){return S;},get scr(){return scr;},get WK(){return WK;},get NIGHT(){return NIGHT;},get RES(){return RES;},get TS(){return TS;},
   step(n=1){for(let i=0;i<n;i++)update();},render,go,setHold(v){testHold=v;},makeState,endDay,startWorkout,sel:()=>sel,
-  setS(s){S=s;},bmr:()=>bmr(S),weight:()=>weight(S),bf:()=>bf(S)};
+  setS(s){S=s;},get MOB(){return MOB;},mobF,landm,wk7,restPct,bmr:()=>bmr(S),weight:()=>weight(S),bf:()=>bf(S)};
 requestAnimationFrame(frame);
 })();
 </script>

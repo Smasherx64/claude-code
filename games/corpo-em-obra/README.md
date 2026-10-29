@@ -104,6 +104,20 @@ Esta versão incorpora conceitos de sete materiais fornecidos pelo autor do proj
 
 Simplificações: a escala de tempo é acelerada (1 dia de jogo ~ 3 dias de efeito corporal), os números são calibrados para jogabilidade e não são prescrição. Os marcos de volume variam muito entre pessoas.
 
+### Segunda rodada de leitura (Prestes, Enciclopédia, Belmiro/UFRJ e guia de mobilidade)
+
+| Conceito | Onde aparece no jogo |
+|---|---|
+| Prescrição por nível (iniciante: 1-3 séries, 8-12RM, corpo todo 2-3x/sem; intermediário: dividir 4x/sem; avançado: 3-6 séries periodizadas 4-6x/sem) | Linha de prescrição na **PLANILHA**, que muda com o seu nível |
+| Nas primeiras ~12 semanas o ganho de força é sobretudo neural e a hipertrofia demora; iniciante sente mais a dor tardia | Força neural sobe mais rápido no começo, ganho de massa começa mais lento e a dor das séries é maior até o nível 3 |
+| Fases do ciclo: base, choque (volume e técnicas avançadas no máximo, 2-8 semanas) e deload | Botão **INICIAR CHOQUE** (14 dias, nível 4+): limites de volume +20%, mais ganho e fadiga sobe mais rápido; ao fim o jogo sugere o deload |
+| Excesso de técnicas avançadas aumenta a fadiga sem render mais; use no choque | Drop set, rest-pause, bi/super-set e negativa fora do choque somam fadiga extra |
+| Descanso entre séries (cerca de 1-3 min, mais para exercícios multiarticulares e cargas pesadas) | O descanso corre mais rápido que o real; começar a série antes da hora reduz a energia inicial do músculo |
+| Cada articulação tem função de mobilidade ou de estabilidade; uma travada faz a vizinha compensar; testes de agachamento acima da cabeça, ombro e stiff na parede | Tela **MOBILID.**: tornozelo, quadril, tórax e ombro (mobilidade) e lombar (estabilidade), com classificação excelente/bom/ruim e um minigame de alongamento. Mobilidade baixa piora a forma e aumenta o risco de lesão nos exercícios que dependem da articulação |
+| Drop set e pirâmide não superaram o treino tradicional em treinados (mesmo volume total, mesmo ganho) | O jogo trata as técnicas como ferramenta de tempo e variação, não como atalho |
+
+Não implementado: periodização ondulatória, % de 1RM exato por série, os 12 testes de movimento do curso completo (o PDF traz só 3 de bônus) e as demais articulações (joelho, escápula).
+
 ## Aviso
 
 Jogo educativo e simplificado. Não substitui orientação médica, de nutricionista ou de profissional de Educação Física.
