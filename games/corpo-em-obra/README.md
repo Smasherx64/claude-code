@@ -17,7 +17,23 @@ Na seleção, **CRIAR O MEU PERSONAGEM** pede sexo, altura (140-210 cm), peso (3
 | Caio (homem, mais gordura) | 118 kg | 38% | 33,7 kg | 1950 kcal |
 | Davi (homem, muito magro) | 56 kg | 12% | 22,7 kg | 1434 kcal |
 
-O visual é simples e colorido (cabeção, corpo redondinho, contorno limpo), com personagens originais. O corpo muda com a gordura corporal (barriga, rosto, coxas) e com a massa de cada grupo muscular (braços, pernas, peito e costas).
+## Visual e animação
+
+Pixel art detalhado, com personagens originais desenhados por código (nenhum arquivo de imagem). Um rasterizador de sprites próprio pinta cada parte do corpo pixel a pixel, com luz vinda de cima à esquerda, três tons de sombreamento, contorno escuro por grupo de peças, roupa, tênis, munhequeiras, cabelo e rosto com expressão.
+
+O corpo muda com a gordura corporal (barriga, rosto, coxas) e com a massa de cada grupo muscular (braços, pernas, peito e costas).
+
+**Execução dos exercícios:** cada exercício tem uma pose biomecânica própria (cinemática inversa nos braços e pernas) com a barra ou halter descrevendo o trajeto certo. Durante a série:
+
+- a respiração acelera e a cabeça balança conforme o cansaço;
+- o corpo treme e se inclina (rosca, desenvolvimento e agachamento) quando a energia acaba;
+- no supino o quadril levanta ao fim da série;
+- o rosto passa de neutro para esforço (dentes cerrados) e para falha;
+- o músculo trabalhado incha e avermelha, e o suor escorre da cabeça;
+- um anel acompanha a posição ideal da barra, e cada repetição perfeita solta um brilho;
+- na **negativa** de supino, agachamento e desenvolvimento, um parceiro entra para ajudar na subida.
+
+**Desempenho:** lógica fixa em 60 Hz e desenho a cada quadro. Medido jogando uma série por 10 s: 60,0 fps, pior quadro 16,8 ms. Aperte `P` no jogo para ver FPS e tempo por quadro.
 
 ## Como se joga
 
