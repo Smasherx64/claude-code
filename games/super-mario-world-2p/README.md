@@ -1,35 +1,50 @@
-# Yoshi's Island 1 - 2 Jogadores
+# Ilha Verde 1 - plataforma 2D cooperativa (2 jogadores)
 
-Recriação fã-feita (HTML5 canvas, arquivo único, sem dependências) da primeira fase de *Super Mario World*, jogável por 2 pessoas no mesmo teclado. Todos os gráficos e sons são gerados por código — nenhum asset da Nintendo é usado.
+Fase de plataforma 2D em HTML5 canvas (arquivo único, sem dependências) para 2 pessoas no mesmo teclado, com um conjunto de golpes inspirado em jogos 3D de plataforma, adaptado para 2D. Personagens, fase, gráficos e sons são originais e gerados por código.
 
 ## Como jogar
 
-Abra `index.html` em qualquer navegador moderno (ou `python3 -m http.server` nesta pasta). Pressione `1` ou `2` para escolher o número de jogadores e `Enter` para começar.
+Abra `index.html` em um navegador moderno (ou rode `python3 -m http.server` nesta pasta). `1` ou `2` escolhe o número de jogadores, `Enter` começa.
 
-| | Mario (P1) | Luigi (P2) |
+| | TICO (P1) | NINA (P2) |
 |---|---|---|
 | Andar | `A` / `D` | `←` / `→` |
 | Pular | `W` ou `Espaço` | `↑` ou `/` |
-| Correr (segurar) | `Shift` esq. ou `F` | `Shift` dir. ou `.` |
+| Agachar | `S` | `↓` |
+| Soco (chão) / Mergulho (ar) | `F` ou `Shift` esq. | `.` ou `Shift` dir. |
 
-Gamepads também funcionam (controle 1 → Mario, controle 2 → Luigi; A = pular, X/B/gatilhos = correr).
+Gamepads também funcionam (controle 1 → TICO, controle 2 → NINA; A pula, X/B/gatilhos socam/mergulham, direcional para baixo agacha).
 
-## O que tem na fase
+## Golpes (como cada um funciona no código)
 
-Baseado na descrição da fase no [Super Mario Wiki](https://www.mariowiki.com/Yoshi%27s_Island_1):
+Todos ficam em `updatePlayer` como estados (`p.st`) e variáveis de controle:
 
-- Koopa sem casco, **Rex** (2 pisões), **Banzai Bills** (4), **Piranha Plants saltadoras** nos canos e o **Chargin' Chuck** (3 pisões) guardando o final
-- **5 Dragon Coins**, moedas, bloco `?` com Super Cogumelo, blocos giratórios (só Mario/Luigi grande quebra), 2 blocos de mensagem
-- Cano azul, plataformas, colinas em degraus e o **Portal Gigante** (a barra móvel dá bônus)
-- Checkpoint no meio da fase, tempo de 400, vidas individuais
+| Golpe | Como fazer | Detalhe da implementação |
+|---|---|---|
+| Pulo triplo | 3 pulos seguidos andando | Ao pousar de um pulo normal abre-se uma janela de 10 frames (`landT`). Pular dentro dela, com `|vx| > 0.8`, sobe `chain` de 1→2→3. Velocidades de pulo: 5.1 / 5.9 / 6.9 (+ bônus da velocidade). O 3º tem giro. |
+| Pulo longo | agachar + pular correndo | Impulso horizontal de 3.7 com pulo baixo e gravidade menor (0.28). |
+| Mortal para trás | agachar + pular parado | Pulo alto (6.8) com leve impulso para trás. |
+| Mortal lateral | pular ao virar bruscamente | Detecta `vx` contrário à direção apertada com `|vx| > 1.2`. |
+| Chute de parede | no ar, encostado na parede, apertar pular | Encostar na parede no ar guarda `wallT = 6` frames; pular nessa janela lança para longe da parede (vx 2.2, vy -5.6). Também há escorregamento lento na parede. |
+| Pancada no chão | `↓` no ar | 14 frames girando suspenso, depois queda rápida. No impacto: quebra blocos giratórios abaixo e derruba inimigos próximos. |
+| Mergulho | soco no ar | Impulso horizontal 3.3 sem controle; ao pousar vira *slide* de ~34 frames. |
+| Soco | soco no chão | Caixa de acerto de 14x10 px à frente; quebra blocos giratórios e fere inimigos. |
+| Pulo "buffer" e "coyote" | automático | Aceita o botão apertado até 6 frames antes de pousar e até 5 frames depois de sair da borda. |
 
-## Regras do co-op
+Vida em **8 fatias** (como um medidor circular): contato custa 1 a 3 fatias conforme o inimigo, moedas curam 1 e o cogumelo cura tudo.
 
-- A câmera segue os dois; ninguém pode sair da tela, então o jogador da frente espera o de trás.
-- Quem morre volta numa "bolha" no ponto do parceiro (ou no checkpoint, se os dois morrerem).
-- Jogadores podem pular um em cima do outro sem se machucar.
+## Na fase
 
-## Diferenças em relação ao jogo original
+- Dinos (2 pulos ou 1 pancada), bala gigante (4), plantas saltadoras nos canos e um brutamontes final (3 golpes)
+- 5 moedas-dragão, moedas, bloco `?` com cogumelo, blocos giratórios, 2 blocos de dica
+- Cano azul, plataformas, colinas em degraus, checkpoint e o portal final (a barra móvel dá bônus)
 
-- Sem o ambiente subterrâneo e sem inclinações reais (as colinas são em degraus); o Cape/Yoshi/3-Up Moon não existem.
-- Os inimigos e blocos foram posicionados seguindo a ordem da fase original, mas não é um mapa idêntico.
+## Cooperativo
+
+- A câmera segue os dois; ninguém sai da tela.
+- Quem morre volta numa "bolha" ao lado do parceiro (ou no checkpoint, se os dois morrerem). 5 vidas por jogador.
+- Pular um em cima do outro não machuca.
+
+## Limitações
+
+Sem área subterrânea nem inclinações reais (colinas em degraus).
