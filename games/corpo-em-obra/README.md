@@ -85,6 +85,25 @@ Valores de referência usados (conferidos em literatura):
 - Com treino e superávit: ganha músculo e menos gordura.
 - Com treino e déficit (Marta, Caio): perde gordura e mantém o músculo.
 
+## Ciência do treino (baseada nos materiais de referência)
+
+Esta versão incorpora conceitos de sete materiais fornecidos pelo autor do projeto (nutrição esportiva de Asker Jeukendrup e colaboradores, a Enciclopédia do Treinamento e Nutrição, "Prescrição e Periodização do Treinamento de Força em Academias" de Prestes et al., "Ciência do Treinamento Desportivo" de Zakharov e Gomes, os slides "Métodos e Sistemas" do LTF/UFRJ, o guia de 117 exercícios de mobilidade e o guia de treino feminino de Charles Glass). Os textos não são reproduzidos: o jogo usa os conceitos e números com palavras próprias, e simplifica o que não cabe num jogo.
+
+| Conceito | Onde aparece no jogo |
+|---|---|
+| Marcos de volume semanal por músculo (MV, MEV, MAV, MRV) e faixas por nível (iniciante até ~12, intermediário até ~24, avançado até ~30-35 séries/semana) | Tela **PLANILHA**; fator de ganho muscular: abaixo do MEV ganha menos, na zona ótima ganha tudo, acima do MRV ganha menos de novo |
+| Volume é dose-resposta, mas tem teto; séries secundárias contam em parte | Contagem dos últimos 7 dias, com séries de exercícios compostos somando parcialmente nos músculos auxiliares |
+| Fadiga acumulada, recuperação, deload (reduzir 40-60% do volume por ~1 semana) e supercompensação | Barra de fadiga; acima de 60% a força cai até 12%, acima de 80% sobe o risco de lesão e cai o ganho; botão de **semana deload**, com rebote de +5% de força e +10% de ganho por 7 dias |
+| Aquecimento / feeder / top set e repetições na reserva (RIR) | Cargas 40% (aquecimento, não conta no volume, reduz o risco de lesão), 55-70% (trabalho) e 85% (top set); a tela de resultado mostra RIR estimado |
+| Volume load (séries x repetições x carga) | Tela de resultado |
+| Técnicas: drop set, rest-pause, bi-set, super-set, negativa | Já existiam; drop e rest-pause agora contam meia série extra cada |
+| Carboidrato por kg, proteína 1,6-2,2 g/kg, gordura ~0,9 g/kg, superávit/déficit em % da manutenção | Tela de nutrição; carboidrato abaixo de ~3 g/kg reduz a energia da série |
+| Disponibilidade de energia (kcal/kg de massa magra, limiar ~30) | Tela de nutrição; abaixo do limiar a recuperação cai |
+| Memória muscular e destreino | Quem perdeu massa recupera mais rápido; parar de treinar por mais de 10 dias reduz massa e força lentamente |
+| Mobilidade e aquecimento articular | Dicas e o efeito do aquecimento na redução de lesões |
+
+Simplificações: a escala de tempo é acelerada (1 dia de jogo ~ 3 dias de efeito corporal), os números são calibrados para jogabilidade e não são prescrição. Os marcos de volume variam muito entre pessoas.
+
 ## Aviso
 
 Jogo educativo e simplificado. Não substitui orientação médica, de nutricionista ou de profissional de Educação Física.

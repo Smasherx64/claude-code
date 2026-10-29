@@ -213,6 +213,15 @@ const TIPS=[
   'DROP SET: NA FALHA, REDUZA A CARGA EM 20-30% E CONTINUE. RECRUTA FIBRAS QUE AINDA TÊM ENERGIA.',
   'SUPER-SET USA MÚSCULOS OPOSTOS, COMO PEITO E COSTAS. UM DESCANSA ENQUANTO O OUTRO TRABALHA.',
   'NEGATIVA: A DESCIDA LENTA (3-6 S) CAUSA MAIS MICROLESÕES. USE COM CUIDADO.',
+  'VOLUME É O QUE MAIS FAZ O MÚSCULO CRESCER, MAS TEM LIMITE: ACIMA DO MRV VOCÊ SÓ ACUMULA FADIGA. AUMENTE 15-30% A CADA 3-6 SEMANAS.',
+  'REPETIÇÕES NA RESERVA (RIR): PARAR 1-3 REPS ANTES DA FALHA DÁ QUASE O MESMO ESTÍMULO COM MUITO MENOS FADIGA.',
+  'DELOAD: A CADA 4-8 SEMANAS, OU QUANDO A FORÇA CAI, REDUZA O VOLUME EM 40-60% POR UMA SEMANA. VOCÊ VOLTA MAIS FORTE.',
+  'AQUECER COM CARGA LEVE ANTES DAS SÉRIES PESADAS PREPARA AS ARTICULAÇÕES E REDUZ O RISCO DE LESÃO.',
+  'NÃO TROQUE DE EXERCÍCIO TODA SEMANA: REPETIR O MOVIMENTO MILHARES DE VEZES MELHORA A TÉCNICA E DEIXA CARREGAR MAIS PESO.',
+  'CARBOIDRATO É O COMBUSTÍVEL DO TREINO PESADO. COM MENOS DE 3 G/KG, AS SÉRIES RENDEM MENOS.',
+  'COMER POUCO DEMAIS PARA O SEU MÚSCULO (MENOS DE ~30 KCAL POR KG DE MASSA MAGRA) ATRAPALHA A RECUPERAÇÃO.',
+  'MOBILIDADE DE TORNOZELO, QUADRIL E OMBRO MELHORA A AMPLITUDE E DEIXA O AGACHAMENTO E O SUPINO MAIS SEGUROS.',
+  'MEMÓRIA MUSCULAR: QUEM JÁ TREINOU RECUPERA O MÚSCULO PERDIDO MAIS RÁPIDO QUANDO VOLTA.',
   'JOGO EDUCATIVO COM RITMO ACELERADO. NÃO SUBSTITUI MÉDICO, NUTRICIONISTA OU PROFISSIONAL DE EDUCAÇÃO FÍSICA.',
 ];
 const MPS=[1,.65,.34,.08,0];   // elevação da síntese proteica nos dias após o treino (≈ +65% em 24 h, +34% em 48 h)
@@ -223,10 +232,10 @@ let S=null,scr='title',sel=null,btns=[],tick=0,toast=null,tipI=0;
 const stateCache=[];
 function makeState(pi,prof){
   const p=prof||PROFS[pi],weight=p.w,fat=weight*p.bf,lbm=weight-fat,musT0=lbm*(p.sex==='M'?.46:.40);
-  const mus=MFRAC.map(f=>({mass:musT0*f,mass0:musT0*f,dmg:0,last:-9,inj:0,fat:0,peak:0}));
+  const mus=MFRAC.map(f=>({mass:musT0*f,mass0:musT0*f,pk:musT0*f,dmg:0,last:-9,inj:0,fat:0,peak:0}));
   const bmr0=370+21.6*lbm;   // Katch-McArdle para o ponto de partida
   const s={prof:p,pi,day:1,wd:0,fat,other:lbm-musT0,mus,neural:MFRAC.map(()=>1),R:bmr0-13*musT0-4.5*fat,
-    cal:0,prot:1.6,xp:0,lvl:1,sets:0,sessionKcal:0,hist:[],allUnlocked:false,sleepH:7.5,lastNight:null,w0:weight,bf0:p.bf,bmr0};
+    wsets:MFRAC.map(()=>[0,0,0,0,0,0,0]),vload:MFRAC.map(()=>[0,0,0,0,0,0,0]),warm:MFRAC.map(()=>-9),fatigue:0,deload:0,reb:0,since:0,cal:0,prot:1.6,xp:0,lvl:1,sets:0,sessionKcal:0,hist:[],allUnlocked:false,sleepH:7.5,lastNight:null,w0:weight,bf0:p.bf,bmr0};
   s.cal=Math.round(maint(s)/50)*50;
   s.hist.push({day:1,w:weight,bf:p.bf,bmr:bmr0,tdee:bmr0*1.15+0.1*s.cal,mus:musT0});
   return s;
@@ -238,8 +247,26 @@ const bmr=s=>s.R+13*musT(s)+4.5*s.fat;          // 13 kcal/kg músculo e 4,5 kca
 const maint=s=>bmr(s)*1.15/0.9;                  // ingestão em que gasto = ingestão (NEAT 15% + efeito térmico 10%)
 const WD=['SEG','TER','QUA','QUI','SEX','SÁB','DOM'];
 function sexF(ex){return S.prof.sex==='F'?(ex.m===5||ex.m===6?0.85:0.72):1;}
-function rm(ex,s=S){const m=s.mus[ex.m];return ex.coef*m.mass*s.neural[ex.m]*(s.prof.sex==='F'?(ex.m===5||ex.m===6?0.85:0.72):1)*(1-Math.min(0.35,m.dmg/100*0.3));}
+function rm(ex,s=S){const m=s.mus[ex.m];return ex.coef*m.mass*s.neural[ex.m]*(s.prof.sex==='F'?(ex.m===5||ex.m===6?0.85:0.72):1)*(1-Math.min(0.35,m.dmg/100*0.3))*(1-fatPen(s))*(s.reb>0?1.05:1);}
 const lvlOf=xp=>{let l=1;for(let i=0;i<XPT.length;i++)if(xp>=XPT[i])l=i+1;return l;};
+// Marcos de volume semanal (MV, MEV, MAV, MRV) por faixa de nível e músculo. Faixas em séries/semana por grupo:
+// iniciante até ~12, intermediário até ~24, avançado até ~30-35 (Enciclopédia do Treinamento; Prestes et al.)
+const LANDB=[[3,5,9,12],[5,9,16,24],[7,12,22,32]],LANDM=[1,1.15,1,.7,.7,1.2,.7];
+function landm(s,i){const t=s.lvl<=3?0:s.lvl<=6?1:2;return LANDB[t].map(v=>Math.round(v*LANDM[i]));}
+const wk7=(s,i)=>s.wsets[i].reduce((a,b)=>a+b,0);
+function volFactor(s,i){
+  const L=landm(s,i),n=wk7(s,i);
+  if(s.deload>0)return .7;
+  if(n<L[1])return .6+.4*n/L[1];
+  if(n<=L[2])return 1;
+  if(n<=L[3])return 1-.2*(n-L[2])/(L[3]-L[2]);
+  return Math.max(.35,.8-.45*(n-L[3])/L[3]);
+}
+function zoneOf(s,i){const L=landm(s,i),n=wk7(s,i);return s.deload>0?{t:'DELOAD',c:C.blu}:n<=0?{t:'SEM TREINO',c:C.dim}:n<L[1]?{t:'ABAIXO DO MEV',c:C.blu}:n<=L[2]?{t:'ZONA ÓTIMA',c:C.grn}:n<=L[3]?{t:'VOLUME ALTO',c:C.org}:{t:'ACIMA DO MRV',c:C.red};}
+const fatPen=s=>s.fatigue>60?.12*(s.fatigue-60)/40:0;
+const carbKg=s=>Math.max(0,(s.cal-4*s.prot*weight(s)-9*.9*weight(s))/4/weight(s));
+const meso=s=>Math.floor((s.day-1)/7)+1;
+const needDeload=s=>s.deload<=0&&(s.fatigue>75||s.since>=28);
 const techOpen=t=>S.allUnlocked||S.lvl>=t.lv;
 function exStatus(i){const m=S.mus[EX[i].m];if(m.inj>0)return{t:'LESÃO '+m.inj+'D',c:C.red,ok:false};if(m.dmg>60)return{t:'MUITO DOLORIDO',c:C.red,ok:true};if(m.dmg>25)return{t:'DOLORIDO',c:C.org,ok:true};if(m.dmg>5)return{t:'RECUPERANDO',c:C.acc,ok:true};return{t:'RECUPERADO',c:C.grn,ok:true};}
 
@@ -660,7 +687,7 @@ let WK=null,RES=null,NIGHT=null,TS=null,BODYPG=0,NUTSEL=0;
 function startWorkout(cfg){
   const ex=EX[cfg.ex],m=S.mus[ex.m],rmc=rm(ex),load=round05(rmc*cfg.pct);
   WK={cfg,ex,exI:cfg.ex,tech:cfg.tech,stage:1,load,rm:rmc,state:'ready',cd:1.8,t:0,cyc:0,p:0,pv:0,expr:0,v:0,maxP:0,devS:0,devN:0,reps:0,miss:0,
-    S:clamp(1-m.fat*0.8-m.dmg/250,0.25,1),forms:[],stim:0,dmg:{},kcal:0,drops:0,pauses:0,fcd:0,pop:[],shake:0,combo:0,best:0,sloppy:false,totalTime:0,sweat:[],sparks:0,perfects:0,startS:0};
+    S:clamp((1-m.fat*0.8-m.dmg/250)*Math.min(1,.82+.045*carbKg(S)),0.25,1),vl:0,forms:[],stim:0,dmg:{},kcal:0,drops:0,pauses:0,fcd:0,pop:[],shake:0,combo:0,best:0,sloppy:false,totalTime:0,sweat:[],sparks:0,perfects:0,startS:0};
   WK.startS=WK.S;go('work');
 }
 function nextExFor(cfg){return cfg.ex2;}
@@ -698,16 +725,17 @@ function wkUpdate(dt){
         const cost=(0.028+0.17*lr2*lr2)*(1+(1-form)*.4)*(w.tech==='neg'?1.25:1);
         const wgt=(0.35+0.65*(1-w.S))*Math.pow(form,1.5)*(lr2<.3?.4:1);
         w.S=Math.max(0,w.S-cost);
-        const st=wgt*STIM[w.tech],dm=wgt*3.4*DMGM[w.tech];
+        const wu=w.cfg.pct<=.4?.35:1,st=wgt*STIM[w.tech]*wu,dm=wgt*3.4*DMGM[w.tech]*(w.cfg.pct<=.4?.5:1);
         w.stim+=st;w.dmg[w.ex.m]=(w.dmg[w.ex.m]||0)+dm;
         for(const [si,f] of w.ex.sec)w.dmg[si]=(w.dmg[si]||0)+dm*f;
-        w.kcal+=4+w.load*.12;w.sparks=Math.min(14,w.sparks+Math.ceil(dm*.6));
+        w.kcal+=4+w.load*.12;w.vl+=w.load;w.sparks=Math.min(14,w.sparks+Math.ceil(dm*.6));
         if(form>=.85){w.flash=20;w.combo++;w.perfects++;w.pop.push({t:'PERFEITO!'+(w.combo>1?' X'+w.combo:''),c:C.acc2,life:50});SND.perfect();}
         else if(form>=.55){w.combo=0;w.pop.push({t:'BOA',c:C.txt,life:40});SND.tick();}
         else{w.combo=0;w.pop.push({t:'FORMA RUIM',c:C.org,life:45});SND.ok();}
         w.best=Math.max(w.best,w.combo);w.miss=0;w.sloppy=false;
         // risco de lesão: carga alta com forma ruim
-        if(form<.35&&lr2>.8&&Math.random()<.35){injure();return;}
+        const rk=(S.warm[w.ex.m]===S.day?.5:1.4)*(S.fatigue>80?1.4:1);
+        if(form<.35&&lr2>.8&&Math.random()<.35*rk){injure();return;}
       }else{
         w.miss++;w.combo=0;w.pop.push({t:'SEM AMPLITUDE',c:C.red,life:45});SND.fail();
         if(w.miss>=2||w.S<=.04){onFailure();return;}
@@ -763,12 +791,22 @@ function finishSet(how){
   const dmgAdd={};
   for(const k in w.dmg){const m=S.mus[k];const add=w.dmg[k];m.dmg=Math.min(100,m.dmg+add);m.last=S.day;m.peak=Math.max(m.peak,m.dmg);m.fat=Math.min(1,m.fat+(1-w.S)*.35);dmgAdd[k]=add;}
   S.sessionKcal+=w.kcal+(reps?20:0);S.sets++;
+  const warmSet=w.cfg.pct<=.4,exs=[w.cfg.ex];if(w.stage===2)exs.push(w.cfg.ex2);
+  const est=Math.round(1/(0.028+0.17*Math.pow(w.load/Math.max(1,w.rm*(1-S.mus[w.ex.m].fat*.3)),2)));
+  let setsAdd=0;
+  if(reps>0){
+    if(warmSet){exs.forEach(x=>{S.warm[EX[x].m]=S.day;});}
+    else{
+      const cnt=1+.5*(w.drops+w.pauses);setsAdd=cnt;
+      exs.forEach(x=>{const e=EX[x];S.wsets[e.m][0]+=cnt;for(const [si,fr] of e.sec)S.wsets[si][0]+=cnt*fr*.5;S.vload[e.m][0]+=w.vl;});
+    }
+  }
   const xp=Math.round((reps*3+avgForm*20+(w.tech!=='norm'?15:0)+(w.perfects||0))*0.6);
   const pm=w.ex.m;if(reps>0)S.neural[pm]=Math.min(1.8,S.neural[pm]+.012*(.4+avgForm));
   const lvl0=S.lvl;S.xp+=reps?xp:0;S.lvl=lvlOf(S.xp);
   const unlocked=S.lvl>lvl0?TECH.filter(t=>t.lv>lvl0&&t.lv<=S.lvl).map(t=>t.n):[];
   if(S.lvl>lvl0){SND.lvl();say('NÍVEL '+S.lvl+'!'+(unlocked.length?' LIBEROU: '+unlocked.join(', '):''),C.acc);}
-  RES={reps,avgForm,stim:w.stim,dmgAdd,kcal:Math.round(w.kcal),xp:reps?xp:0,how,ex:EX[w.cfg.ex].n,ex2:w.stage===2?EX[w.cfg.ex2].n:null,tech:TECH.find(t=>t.id===w.tech).n,injured:w.injured,perfects:w.perfects,best:w.best};
+  RES={vl:Math.round(w.vl),rir:how==='RACK'||how==='LESÃO'?Math.max(0,est-reps):0,estRM:est,warm:warmSet,setsAdd,mi:EX[w.cfg.ex].m,reps,avgForm,stim:w.stim,dmgAdd,kcal:Math.round(w.kcal),xp:reps?xp:0,how,ex:EX[w.cfg.ex].n,ex2:w.stage===2?EX[w.cfg.ex2].n:null,tech:TECH.find(t=>t.id===w.tech).n,injured:w.injured,perfects:w.perfects,best:w.best};
   WK=null;go('result');
 }
 // energia de um dia de jogo, usada no sono e nas projeções
@@ -778,7 +816,8 @@ function endDay(h){
   const sf=h>=7&&h<=9?1:h>9?.95:h>=6?.8:.55;                 // sono: 7-9 h ótimo
   const pf=clamp(S.prot/1.6,.3,1);                            // proteína: ~1,6 g/kg dá o ganho máximo
   const tdeeBase=B*1.15+0.1*S.cal,bal0=S.cal-(tdeeBase+S.sessionKcal*1.1);
-  const pen=bal0<0?clamp(-bal0/700,0,1)*(bf(S)>.30?.25:.5):0,ef=1-pen;   // déficit atrapalha o ganho
+  const lbm0=weight(S)-S.fat,ea=(S.cal-S.sessionKcal)/lbm0;
+  const pen=(bal0<0?clamp(-bal0/700,0,1)*(bf(S)>.30?.25:.5):0)+(ea<30?.15:0),ef=1-pen;   // déficit atrapalha o ganho
   const noviceMult=1.5/(1+.1*(S.lvl-1));
   let bump=0,gainTot=0;
   S.mus.forEach((m,i)=>{
@@ -786,10 +825,13 @@ function endDay(h){
     if(m.dmg>0){
       const cap=(38+22*mps)*pf*sf*ef,rep=Math.min(m.dmg,cap);m.dmg-=rep;
       const pot=m.mass0*(S.prof.sex==='M'?1.5:1.45),room=clamp(1-(m.mass-m.mass0)/(pot-m.mass0),0,1);
-      const gain=rep*0.00016*m.mass*noviceMult*RITMO*Math.pow(room,1.2);
+      const mem=1+clamp((m.pk-m.mass)/m.mass*6,0,.8);
+      const gain=rep*0.00016*m.mass*noviceMult*RITMO*Math.pow(room,1.2)*volFactor(S,i)*mem*(S.reb>0?1.1:1)*(S.fatigue>80?.85:1);
       m.mass+=gain;gainTot+=gain;
     }
     if(m.last>0)bump=Math.max(bump,mps*clamp(m.peak/40,0,1));
+    m.pk=Math.max(m.pk,m.mass);
+    if(m.last>0&&S.day-m.last>10&&S.deload<=0){m.mass=Math.max(m.mass0*.95,m.mass*(1-.0015*RITMO));S.neural[i]=Math.max(1,S.neural[i]*.996);}
     m.fat*=.2;if(m.inj>0)m.inj--;
     if(m.dmg<=0.5)m.peak=0;
   });
@@ -807,6 +849,13 @@ function endDay(h){
   const after={w:weight(S),fat:S.fat,mus:musT(S),bmr:bmr(S),bf:bf(S)};
   NIGHT={t:0,dmg0,dmg1:S.mus.map(m=>m.dmg),mass0,mass1:S.mus.map(m=>m.mass),before,after,bal,tdee,parts:{bmr:B,neat:.15*B,tef:.10*S.cal,train:S.sessionKcal,epoc,bump:bumpK},h,sf,pf,ef,trained:S.sessionKcal>0,bump,day:S.day};
   S.lastNight=NIGHT;
+  // fadiga acumulada: cada série injeta fadiga, o sono e o deload aceleram a dissipação
+  const dsets=S.wsets.reduce((a,v)=>a+v[0],0);
+  S.fatigue=clamp(S.fatigue*(S.deload>0?.78:.9)+dsets*1.6*(S.deload>0?.5:1)+(h<6.5?4:0)-(h>=7.5?1:0),0,100);
+  S.wsets.forEach(a=>{a.unshift(0);a.pop();});S.vload.forEach(a=>{a.unshift(0);a.pop();});
+  S.since++;if(S.reb>0)S.reb--;
+  if(S.deload>0){S.deload--;if(S.deload===0){S.reb=7;S.since=0;S.fatigue=Math.min(S.fatigue,25);}}
+  NIGHT.fatigue=S.fatigue;NIGHT.ea=ea;
   S.day++;S.wd=(S.wd+1)%7;S.sessionKcal=0;S.sets=0;S.sleepH=h;
   S.hist.push({day:S.day,w:after.w,bf:after.bf,bmr:after.bmr,tdee,mus:after.mus});
   tipI=(tipI+1)%TIPS.length;
@@ -847,6 +896,7 @@ function handleScreen(){
     if(act==='train'){TS={step:0,ex:null,pct:.55,tech:'norm',ex2:undefined};go('tsetup');sel='e0';}
     else if(act==='nutri'){go('nutri');sel='cm';}
     else if(act==='body'){BODYPG=0;go('body');sel='bk';}
+    else if(act==='plan'){go('plan');sel='plback';}
     else if(act==='sleep'){go('sleep');sel='s2';}
     if(pressed('KeyU')){S.allUnlocked=true;say('TODAS AS TÉCNICAS LIBERADAS',C.acc2);}
   }
@@ -864,6 +914,10 @@ function handleScreen(){
     if(act==='pman')S.cal=Math.round(M/50)*50;
     if(act==='psup')S.cal=Math.round((M+400)/50)*50;
     if(act==='nback'||back){go('hub');sel='train';}
+  }
+  else if(scr==='plan'){
+    if(act==='deload'&&S.deload<=0){S.deload=7;S.since=0;say('SEMANA DELOAD INICIADA',C.blu);}
+    if(act==='plback'||back){go('hub');sel='train';}
   }
   else if(scr==='sleep'){
     const H={s1:5,s2:6,s3:7.5,s4:9};
@@ -907,9 +961,10 @@ function render(){
   else if(scr==='result')rResult();
   else if(scr==='nutri')rNutri();
   else if(scr==='sleep')rSleep();
+  else if(scr==='plan')rPlan();
   else if(scr==='night')rNight();
   else if(scr==='body')rBody();
-  if(['select','custom','tsetup','nutri','sleep','body','result'].includes(scr))button('__back',W-48,2,46,12,'VOLTAR');
+  if(['select','custom','tsetup','nutri','sleep','body','result','plan'].includes(scr))button('__back',W-48,2,46,12,'VOLTAR');
   if(toast){const a=Math.min(1,toast.life/20);ctx.globalAlpha=a;box(W/2-150,4,300,16,'#101430',C.acc);T(toast.t,W/2,9,toast.c,'c');ctx.globalAlpha=1;}
 }
 let TITLE_ST=null;
@@ -978,7 +1033,7 @@ function rHub(){
   T('NÍVEL '+S.lvl,120,5,C.txt);
   const a=XPT[S.lvl-1],b=XPT[S.lvl]||XPT[XPT.length-1];bar(168,4,84,8,(S.xp-a)/(b-a),C.acc2);
   T(S.xp+'/'+b,258,5,C.dim);
-  T('SÉRIES: '+S.sets+'/4',W-6,5,C.txt,'r');
+  T('SÉRIES: '+S.sets+'/10',W-6,5,C.txt,'r');
   panel(4,20,124,192,S.prof.name);
   figFront(66,142,.75,S,{expr:3});
   const w=weight(S),d=w-S.w0;
@@ -990,8 +1045,9 @@ function rHub(){
   const pk=S.lastNight?S.lastNight.parts.bump:0;
   button('train',132,20,118,22,'TREINAR');
   button('nutri',254,20,122,22,'NUTRIÇÃO');
-  button('body',132,46,118,22,'CORPO E METABOLISMO');
-  button('sleep',254,46,122,22,'DORMIR',{sub:''});
+  button('body',132,46,78,22,'CORPO');
+  button('plan',214,46,86,22,'PLANILHA');
+  button('sleep',304,46,72,22,'DORMIR',{sub:''});
   panel(132,72,244,88,'MÚSCULOS: RECUPERAÇÃO E FORÇA');
   S.mus.forEach((m,i)=>{
     const y=86+i*10.3,ex=EX[i],st=exStatus(i);
@@ -1001,7 +1057,9 @@ function rHub(){
     T(rm(ex).toFixed(0)+'KG',372,y,C.dim,'r');
   });
   panel(132,164,244,48,'DICA');
-  TL(TIPS[tipI%TIPS.length],138,177,39,C.txt,8.5);
+  if(S.deload>0)TL('SEMANA DELOAD ('+S.deload+' D): TREINE COM 40-60% MENOS SÉRIES E PARE LONGE DA FALHA. DORMIR BEM ACELERA.',138,177,39,C.blu,8.5);
+  else if(needDeload(S))TL('FADIGA '+Math.round(S.fatigue)+'%: HORA DE UM DELOAD. ABRA A PLANILHA.',138,177,39,C.red,8.5);
+  else TL(TIPS[tipI%TIPS.length],138,177,39,C.txt,8.5);
   if(pressed('KeyT')){tipI++;}
 }
 function rTsetup(){
@@ -1018,19 +1076,24 @@ function rTsetup(){
     T('FORÇA MÁX: '+rm(ex).toFixed(0)+' KG',220,47,C.acc2);
     T('MASSA: '+S.mus[ex.m].mass.toFixed(2)+' KG',220,58,C.txt);
     T('DANO: '+S.mus[ex.m].dmg.toFixed(0)+'/100',220,69,exStatus(ci).c);
-    TL('TREINAR UM MÚSCULO MUITO DOLORIDO RENDE MENOS E AUMENTA O RISCO DE LESÃO. ALTERNE OS GRUPOS E DESCANSE.',220,86,25,C.dim,9);
-    TL('SEGURE ESPAÇO (OU O MOUSE) PARA SUBIR A CARGA E SOLTE PARA DESCER, SEGUINDO O MARCADOR.',220,134,25,C.txt,9);
+    {const L=landm(S,ex.m),z=zoneOf(S,ex.m);
+    T('SEMANA: '+wk7(S,ex.m).toFixed(0)+' SÉRIES ('+L[1]+'-'+L[3]+')',220,80,z.c);
+    T('AQUECIDO HOJE: '+(S.warm[ex.m]===S.day?'SIM':'NÃO'),220,91,S.warm[ex.m]===S.day?C.grn:C.org);}
+    TL('MÚSCULO MUITO DOLORIDO RENDE MENOS E AUMENTA O RISCO DE LESÃO. ALTERNE OS GRUPOS.',220,104,25,C.dim,9);
+    TL('SEGURE ESPAÇO (OU O MOUSE) PARA SUBIR A CARGA E SOLTE PARA DESCER, SEGUINDO O MARCADOR.',220,142,25,C.txt,9);
   }else if(t.step===1){
     const ex=EX[t.ex],rmc=rm(ex);
     panel(8,20,200,186,ex.n);
     [.4,.55,.7,.85].forEach((p,i)=>{
       const lr=p,est=Math.round(1/(0.028+0.17*lr*lr));
-      button('l'+i,12,38+i*32,192,27,Math.round(p*100)+'% DA FORÇA: '+round05(rmc*p).toFixed(1)+' KG',{al:'l',sub:'~'+est+' REPS'});
+      button('l'+i,12,38+i*32,192,27,Math.round(p*100)+'% '+['AQUECER','TRABALHO','TRABALHO','TOP SET'][i]+': '+round05(rmc*p).toFixed(1)+' KG',{al:'l',sub:'~'+est+' REPS (RM)'});
     });
     panel(214,20,162,186,'COMO ESCOLHER');
-    TL('CARGA LEVE: MUITAS REPETIÇÕES, MENOS ESTÍMULO POR REPETIÇÃO. BOA PARA APRENDER A TÉCNICA.',220,36,25,C.txt,9);
-    TL('CARGA PESADA: POUCAS REPETIÇÕES, MAIS MICROLESÃO E MAIS RISCO SE A FORMA FALHAR.',220,86,25,C.txt,9);
-    TL('INICIANTES: COMECE COM 55%.',220,136,25,C.acc,9);
+    TL('40% É AQUECIMENTO: NÃO CONTA NO VOLUME, MAS CORTA O RISCO DE LESÃO NO MÚSCULO.',220,36,25,C.txt,9);
+    TL('SÉRIES DE TRABALHO (55-70%): PARE 1-3 REPS ANTES DA FALHA (RIR).',220,70,25,C.txt,9);
+    TL('TOP SET (85%): POUCAS REPS, AS MAIS PESADAS DO TREINO.',220,104,25,C.txt,9);
+    TL('AQUECIDO HOJE: '+(S.warm[ex.m]===S.day?'SIM':'NÃO'),220,138,25,S.warm[ex.m]===S.day?C.grn:C.org,9);
+    TL('INICIANTES: COMECE COM 55%.',220,150,25,C.acc,9);
   }else if(t.step===2){
     panel(8,20,200,186,'TÉCNICAS');
     TECH.forEach((tc,i)=>{const ok=techOpen(tc);button('t'+i,12,34+i*28,192,24,tc.n,{dis:!ok,al:'l',sub:ok?'':'NÍVEL '+tc.lv,subc:C.red});});
@@ -1116,35 +1179,62 @@ function rResult(){
   T('TÉCNICA: '+r.tech,52,43,C.acc2);
   T('REPETIÇÕES: '+r.reps,52,58,C.txt);
   T('FORMA MÉDIA: '+Math.round(r.avgForm*100)+'%',52,69,r.avgForm>.7?C.grn:C.org);
-  T('PERFEITAS: '+r.perfects+'  MAIOR COMBO: X'+r.best,52,80,C.txt);
+  T('PERFEITAS: '+r.perfects+'  COMBO X'+r.best,52,80,C.txt);
   T('CALORIAS: '+r.kcal+' KCAL',52,91,C.txt);
   T('+'+r.xp+' XP',52,102,C.acc2);
   T('MICROLESÕES NOS MÚSCULOS',200,58,C.acc);
   let y=70;for(const k in r.dmgAdd){T(MUSC[k],200,y,C.txt);bar(260,y-1,60,7,r.dmgAdd[k]/60,C.org);T('+'+r.dmgAdd[k].toFixed(0),340,y,C.org,'r');y+=11;}
-  if(r.injured)TL('SEU '+r.injured+' FICOU MACHUCADO POR CARGA ALTA COM FORMA RUIM. DESCANSE 3 DIAS ESSE GRUPO.',52,120,56,C.red,9);
-  else TL('ESSAS MICROLESÕES SÃO NORMAIS E NECESSÁRIAS. O CORPO RECONSTRÓI O MÚSCULO MAIOR NAS PRÓXIMAS 24-48 H. COMA PROTEÍNA E DURMA BEM.',52,120,56,C.txt,9);
-  button('again',60,166,120,24,'OUTRA SÉRIE',{dis:S.sets>=4||!!r.injured,sub:S.sets+'/4'});
-  button('hub',204,166,120,24,'VOLTAR');
+  T('VOLUME LOAD: '+r.vl+' KG',52,113,C.txt);
+  T('REPS NA RESERVA: '+(r.how==='RACK'?r.rir+' (PAROU ANTES)':r.rir===0?'0 (FALHA)':r.rir),52,123,r.rir>3?C.org:C.txt);
+  {const L=landm(S,r.mi),n=wk7(S,r.mi),z=zoneOf(S,r.mi);
+   T(r.warm?'AQUECIMENTO: NÃO CONTA NO VOLUME':'SEMANA: '+n.toFixed(1)+' SÉRIES ('+z.t+')',52,133,r.warm?C.blu:z.c);}
+  if(r.injured)TL('SEU '+r.injured+' FICOU MACHUCADO POR CARGA ALTA COM FORMA RUIM. DESCANSE 3 DIAS ESSE GRUPO.',52,144,50,C.red,9);
+  else TL('AS MICROLESÕES SÃO NORMAIS. O CORPO RECONSTRÓI O MÚSCULO NAS PRÓXIMAS 24-48 H. COMA PROTEÍNA E DURMA BEM.',52,144,50,C.txt,9);
+  button('again',60,172,120,22,'OUTRA SÉRIE '+S.sets+'/10',{dis:S.sets>=10||!!r.injured});
+  button('hub',204,172,120,22,'VOLTAR');
 }
 function rNutri(){
   drawGym(true);R(0,0,W,H,'rgba(0,0,0,.5)');
   panel(10,10,364,196,'NUTRIÇÃO DO DIA');
-  const B=bmr(S),M=maint(S),minC=S.prof.sex==='F'?1200:1500;
+  const B=bmr(S),M=maint(S),minC=S.prof.sex==='F'?1200:1500,w=weight(S);
   T('CALORIAS',24,32,C.txt);
   button('calm',130,26,24,18,'-');T(S.cal+' KCAL',200,32,C.acc,'c');button('calp',250,26,24,18,'+');
   T('PROTEÍNA',24,56,C.txt);
   button('prm',130,50,24,18,'-');T(S.prot.toFixed(1)+' G/KG',200,56,C.acc,'c');button('prp',250,50,24,18,'+');
-  T('= '+Math.round(S.prot*weight(S))+' G/DIA',290,56,C.dim);
-  button('pdef',24,80,100,20,'DÉFICIT');button('pman',134,80,100,20,'MANTER');button('psup',244,80,100,20,'SUPERÁVIT');
-  const tdee=B*1.15+0.1*S.cal,bal=S.cal-tdee;
-  panel(24,108,336,70,'PROJEÇÃO (SEM CONTAR O TREINO)');
-  T('GASTO BASAL: '+Math.round(B)+' KCAL',32,124,C.txt);
-  T('GASTO TOTAL ESTIMADO: '+Math.round(tdee)+' KCAL',32,134,C.txt);
-  T('BALANÇO: '+(bal>=0?'+':'')+Math.round(bal)+' KCAL/DIA',32,146,bal>150?C.org:bal<-150?C.acc2:C.acc);
-  T(bal>150?'SUPERÁVIT: PODE CRESCER, MAS TAMBÉM GANHA GORDURA':bal<-150?'DÉFICIT: PERDE GORDURA. PROTEÍNA E TREINO PROTEGEM O MÚSCULO':'MANUTENÇÃO: PESO ESTÁVEL',32,157,C.dim);
-  T(S.prot>=1.6?'PROTEÍNA NO PONTO IDEAL (~1,6 G/KG)':'PROTEÍNA ABAIXO DO IDEAL: RECUPERAÇÃO MAIS LENTA',32,167,S.prot>=1.6?C.grn:C.org);
-  TL('MÍNIMO NO JOGO '+minC+' KCAL. DIETAS EXTREMAS FAZEM MAL: PROCURE UM NUTRICIONISTA.',24,184,48,C.dim,9);
-  button('nback',310,188,60,14,'OK');
+  T('= '+Math.round(S.prot*w)+' G/DIA',290,56,C.dim);
+  button('pdef',24,76,100,18,'DÉFICIT');button('pman',134,76,100,18,'MANTER');button('psup',244,76,100,18,'SUPERÁVIT');
+  const tdee=B*1.15+0.1*S.cal,bal=S.cal-tdee,pct=(S.cal/M-1)*100,cg=carbKg(S),ea=S.cal/(w-S.fat);
+  panel(24,98,336,64,'MACROS E BALANÇO');
+  T('BASAL '+Math.round(B)+'  GASTO ESTIMADO '+Math.round(tdee)+' KCAL',32,112,C.txt);
+  T('BALANÇO '+(bal>=0?'+':'')+Math.round(bal)+' KCAL ('+(pct>=0?'+':'')+pct.toFixed(0)+'% DA MANUTENÇÃO)',32,122,bal>150?C.org:bal<-150?C.acc2:C.acc);
+  T('PROT '+Math.round(S.prot*w)+' G  GORDURA '+Math.round(.9*w)+' G  CARBO '+Math.round(cg*w)+' G',32,132,C.txt);
+  T('CARBOIDRATO '+cg.toFixed(1)+' G/KG: '+(cg<3?'BAIXO, O TREINO RENDE MENOS':cg<5?'MODERADO':cg<7?'BOM PARA TREINO DIÁRIO':'ALTO'),32,142,cg<3?C.org:C.grn);
+  T('ENERGIA DISPONÍVEL '+Math.round(ea)+' KCAL/KG MAGRO'+(ea<30?': BAIXA, RISCO':': OK'),32,152,ea<30?C.red:C.grn);
+  T(S.prot>=1.6?'PROTEÍNA OK (1,6-2,2 G/KG É A FAIXA USUAL)':'PROTEÍNA BAIXA: RECUPERAÇÃO MAIS LENTA',24,168,S.prot>=1.6?C.grn:C.org);
+  T(pct>20?'SUPERÁVIT GRANDE: MAIS GORDURA QUE MÚSCULO. MIRE +10 A +20%':pct>5?'SUPERÁVIT MODERADO: BOM PARA GANHAR MASSA':pct<-25?'DÉFICIT GRANDE: PERDE MÚSCULO JUNTO. MIRE -15 A -25%':pct<-5?'DÉFICIT: PERDE GORDURA, MANTENHA O TREINO PESADO':'MANUTENÇÃO: PESO ESTÁVEL',24,178,C.dim);
+  T('MÍNIMO '+minC+' KCAL. PROCURE UM NUTRICIONISTA.',24,191,C.dim);
+  button('nback',310,190,60,14,'OK');
+}
+function rPlan(){
+  drawGym(true);R(0,0,W,H,'rgba(0,0,0,.55)');
+  panel(8,18,368,190,'PLANILHA DE VOLUME · SEMANA '+meso(S)+' DO CICLO');
+  T('SÉRIES NOS ÚLTIMOS 7 DIAS (OS SECUNDÁRIOS CONTAM EM PARTE)',14,32,C.dim);
+  S.mus.forEach((m,i)=>{
+    const y=44+i*14,L=landm(S,i),n=wk7(S,i),mx=L[3]*1.3,z=zoneOf(S,i),bx=62,bw=170;
+    T(MUSC[i],14,y,C.txt);
+    R(bx,y-1,bw,8,C.out);R(bx+1,y,bw-2,6,'#16246a');
+    R(bx+1,y,Math.round((bw-2)*clamp(n/mx,0,1)),6,z.c);
+    [[L[0],C.dim],[L[1],C.blu],[L[2],C.grn],[L[3],C.red]].forEach(a=>R(bx+Math.round(bw*a[0]/mx),y-2,1,10,a[1]));
+    T(n.toFixed(0),240,y,z.c,'r');T(z.t,246,y,z.c);
+  });
+  T('MARCAS: MV MANTER · MEV MÍNIMO · MAV ÓTIMO · MRV LIMITE',14,146,C.dim);
+  T('FADIGA ACUMULADA',14,158,C.txt);bar(124,157,100,7,S.fatigue/100,S.fatigue>75?C.red:S.fatigue>50?C.org:C.grn);
+  T(Math.round(S.fatigue)+'%',230,158,S.fatigue>75?C.red:C.txt);
+  if(S.reb>0)T('REBOTE PÓS-DELOAD: +5% FORÇA, +10% GANHO ('+S.reb+' D)',14,169,C.acc2);
+  else if(S.deload>0)T('DELOAD: VOLUME -40-60%, SEM FALHAR. FADIGA CAINDO.',14,169,C.blu);
+  else TL(needDeload(S)?'FADIGA ALTA OU MUITO TEMPO SEM DELOAD: HORA DE REDUZIR O VOLUME POR 7 DIAS.':'AUMENTE O VOLUME EM 15-30% A CADA 3-6 SEMANAS SE ESTIVER RECUPERANDO BEM.',14,169,56,needDeload(S)?C.red:C.txt,9);
+  button('deload',14,190,170,14,S.deload>0?'DELOAD ATIVO: '+S.deload+' D':'INICIAR SEMANA DELOAD',{dis:S.deload>0});
+  button('plback',300,190,70,14,'OK');
 }
 function rSleep(){
   drawGym(true);R(0,0,W,H,'rgba(0,0,0,.6)');
