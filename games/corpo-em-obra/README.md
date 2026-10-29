@@ -17,6 +17,16 @@ Na seleção, **CRIAR O MEU PERSONAGEM** pede sexo, altura (140-210 cm), peso (3
 | Caio (homem, mais gordura) | 118 kg | 38% | 33,7 kg | 1950 kcal |
 | Davi (homem, muito magro) | 56 kg | 12% | 22,7 kg | 1434 kcal |
 
+## No celular
+
+Funciona por toque, de preferência com o celular na **horizontal** (há um botão "Tela cheia"):
+
+- toque nos botões; segurar `+` / `-` repete, para ajustar peso, altura e calorias rápido;
+- no treino, **segure o dedo em qualquer ponto da tela** para subir a carga e solte para descer; o botão ENCERRAR termina a série;
+- o botão VOLTAR substitui a tecla Esc, e "LIBERAR TUDO (DEMO)" na escolha de técnica substitui a tecla `U`;
+- no drop set toque na tela para reduzir a carga, e no rest-pause toque para pular a pausa;
+- os gestos do navegador (zoom por toque duplo, menu de pressão longa, puxar para atualizar) ficam desligados dentro do jogo.
+
 ## Visual e animação
 
 Pixel art detalhado, com personagens originais desenhados por código (nenhum arquivo de imagem). Um rasterizador de sprites próprio pinta cada parte do corpo pixel a pixel, com luz vinda de cima à esquerda, três tons de sombreamento, contorno escuro por grupo de peças, roupa, tênis, munhequeiras, cabelo e rosto com expressão.

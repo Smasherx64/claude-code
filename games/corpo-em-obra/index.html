@@ -2,16 +2,36 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!--PAGE-START-->
 <title>Corpo em Obra</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <style>
-  html,body{margin:0;height:100%;background:#0b0d17}
-  body{display:flex;align-items:center;justify-content:center}
-  canvas{width:min(100vw,calc(100vh*16/9));aspect-ratio:16/9;image-rendering:pixelated;display:block;background:#000;outline:none;touch-action:none}
+  /* Layout: palco 16:9 centralizado em fundo escuro; no celular na horizontal o jogo ocupa a tela toda. Visual escuro por escolha. */
+  :root{--bg:#0b0d17;--fg:#e9ebff;--muted:#8f95c8;--accent:#ffcf3f;color-scheme:dark}
+  html,body{height:100%;overscroll-behavior:none}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));box-sizing:border-box;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  canvas{width:min(100%,calc((100vh - 70px)*16/9));width:min(100%,calc((100dvh - 70px)*16/9));aspect-ratio:16/9;image-rendering:pixelated;display:block;background:#000;outline:none;touch-action:none;border-radius:3px}
+  .hint,.rot{max-width:min(100%,760px);color:var(--muted);text-align:center;font-size:13px;margin:0}
+  .hint b,.rot b{color:var(--accent);font-weight:600}
+  .rot{display:none;padding:8px 12px;border:1px solid var(--muted);border-radius:6px}
+  .fs{position:fixed;right:max(8px,env(safe-area-inset-right,0px));bottom:max(8px,env(safe-area-inset-bottom,0px));z-index:5;font:600 12px system-ui,sans-serif;color:var(--fg);background:rgba(20,24,56,.82);border:1px solid var(--muted);border-radius:6px;padding:6px 10px;display:none}
+  @media (pointer:coarse){.fs{display:block}}
+  @media (pointer:coarse) and (orientation:portrait){.rot{display:block}}
+  @media (pointer:coarse) and (orientation:landscape){
+    body{padding-block:0;gap:0}
+    canvas{width:min(100%,calc(100vh*16/9));width:min(100%,calc(100dvh*16/9));border-radius:0}
+    .hint{display:none}
+  }
 </style>
 </head>
 <body>
 <canvas id="c" tabindex="0"></canvas>
+<p class="rot" id="rot"><b>Gire o celular para a horizontal</b> para jogar com a tela maior.</p>
+<p class="hint" id="hint"><b>Clique no jogo</b> para dar foco. Setas/WASD navegam, Enter confirma, <b>segure Espaço</b> (ou o mouse) para levantar no treino. <b>P</b> mostra o FPS.</p>
+<button class="fs" id="fs" type="button">Tela cheia</button>
 <script>
 // CORPO EM OBRA - simulador de treino e evolução corporal em pixel art (384x216).
 // Tudo é desenhado por código. Os números fisiológicos usados na simulação estão comentados onde entram.
@@ -116,16 +136,23 @@ addEventListener('keydown',e=>{
 addEventListener('keyup',e=>{keys[e.code]=false;});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.down=false;});
 function toCv(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height};}
-cv.addEventListener('pointerdown',e=>{const p=toCv(e);mouse.x=p.x;mouse.y=p.y;mouse.down=true;mouse.click=true;initAudio();cv.focus();});
+const hitB=(b,x,y)=>x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h;
+cv.addEventListener('pointerdown',e=>{
+  e.preventDefault();const p=toCv(e);mouse.x=p.x;mouse.y=p.y;mouse.down=true;mouse.click=true;mouse.tap=true;mouse.holdT=0;
+  mouse.onBtn=!!btns.find(b=>!b.dis&&hitB(b,p.x,p.y));      // toque num botão não conta como "segurar a barra"
+  initAudio();cv.focus();try{cv.setPointerCapture(e.pointerId);}catch(_){}
+});
 addEventListener('pointerup',()=>{mouse.down=false;});
+addEventListener('pointercancel',()=>{mouse.down=false;});
+cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointermove',e=>{const p=toCv(e);mouse.x=p.x;mouse.y=p.y;mouse.moved=true;});
 const pressed=c=>prs.has(c);
-const pushHeld=()=>testHold!==null?testHold:(keys.Space||keys.KeyW||keys.ArrowUp||mouse.down);
+const pushHeld=()=>testHold!==null?testHold:(keys.Space||keys.KeyW||keys.ArrowUp||(mouse.down&&!mouse.onBtn));
 let testHold=null;
 
 // ============ áudio ============
 let AC=null;
-function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
+function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(AC&&AC.state==='suspended'){try{AC.resume();}catch(e){}}}
 function beep(f,d,type='square',to=null,vol=0.05,delay=0){
   if(!AC)return;
   try{const t=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);
@@ -593,18 +620,27 @@ function navDir(dx,dy){
     if(along<=1)continue;const sc=along+across*2.2;if(sc<bs){bs=sc;best=b;}}
   if(best){sel=best.id;SND.nav();}
 }
-function readUI(){
-  let act=null,back=false;
-  if(mouse.moved){const b=btns.find(b=>!b.dis&&mouse.x>=b.x&&mouse.x<b.x+b.w&&mouse.y>=b.y&&mouse.y<b.y+b.h);if(b&&b.id!==sel){sel=b.id;}mouse.moved=false;}
-  if(mouse.click){const b=btns.find(b=>!b.dis&&mouse.x>=b.x&&mouse.x<b.x+b.w&&mouse.y>=b.y&&mouse.y<b.y+b.h);if(b){sel=b.id;act=b.id;}mouse.click=false;}
-  if(pressed('ArrowUp')||pressed('KeyW'))navDir(0,-1);
-  if(pressed('ArrowDown')||pressed('KeyS'))navDir(0,1);
-  if(pressed('ArrowLeft')||pressed('KeyA'))navDir(-1,0);
-  if(pressed('ArrowRight')||pressed('KeyD'))navDir(1,0);
-  if(pressed('Enter')||pressed('Space')){const b=btns.find(b=>b.id===sel&&!b.dis);if(b)act=b.id;}
+function readUI(allowKeys=true){
+  let act=null,back=false,tap=false;
+  if(mouse.tap){tap=true;mouse.tap=false;}
+  if(mouse.moved){const b=btns.find(b=>!b.dis&&hitB(b,mouse.x,mouse.y));if(b&&b.id!==sel){sel=b.id;}mouse.moved=false;}
+  if(mouse.click){const b=btns.find(b=>!b.dis&&hitB(b,mouse.x,mouse.y));if(b){sel=b.id;act=b.id;}mouse.click=false;}
+  // segurar + / - (peso, altura, calorias...) repete, para não precisar tocar dezenas de vezes
+  if(mouse.down&&mouse.onBtn&&(scr==='custom'||scr==='nutri')){
+    mouse.holdT++;
+    if(mouse.holdT>22&&mouse.holdT%4===0){const b=btns.find(b=>!b.dis&&hitB(b,mouse.x,mouse.y));if(b&&/^([hwa][+-]\d|calm|calp|prm|prp)$/.test(b.id))act=b.id;}
+  }
+  if(allowKeys){
+    if(pressed('ArrowUp')||pressed('KeyW'))navDir(0,-1);
+    if(pressed('ArrowDown')||pressed('KeyS'))navDir(0,1);
+    if(pressed('ArrowLeft')||pressed('KeyA'))navDir(-1,0);
+    if(pressed('ArrowRight')||pressed('KeyD'))navDir(1,0);
+    if(pressed('Enter')||pressed('Space')){const b=btns.find(b=>b.id===sel&&!b.dis);if(b)act=b.id;}
+  }
   if(pressed('Escape')||pressed('Backspace'))back=true;
-  if(!btns.find(b=>b.id===sel)){const en=btns.filter(b=>!b.dis);sel=en.length?en[0].id:null;}
-  return{act,back};
+  if(act==='__back'){act=null;back=true;}
+  if(!btns.find(b=>b.id===sel)){const en=btns.filter(b=>!b.dis&&b.id!=='__back'&&b.id!=='endset');sel=en.length?en[0].id:null;}
+  return{act,back,tap};
 }
 function go(s,keep){scr=s;if(!keep)sel=null;tick=0;}
 function say(t,c){toast={t,c:c||C.acc,life:150};}
@@ -619,6 +655,7 @@ function customProf(){
   const bfp=clamp((1.2*bmi+0.23*c.age-10.8*(c.sex==='M'?1:0)-5.4)/100,c.sex==='M'?.06:.14,.55);
   return{name:'VOCÊ',sex:c.sex,h:c.h,w:c.w,bf:bfp,bmi,skin:SKINS[c.skin],hair:HAIRC[c.hair],hs:HSTY[c.hs],top:TOPC[c.top],bot:'#2f3f7a',tag:'PERSONAGEM',tag2:'SEU CORPO',desc:'SEU PONTO DE PARTIDA, COM ALTURA E PESO REAIS.'};
 }
+const TOUCH=(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
 let WK=null,RES=null,NIGHT=null,TS=null,BODYPG=0,NUTSEL=0;
 function startWorkout(cfg){
   const ex=EX[cfg.ex],m=S.mus[ex.m],rmc=rm(ex),load=round05(rmc*cfg.pct);
@@ -786,8 +823,8 @@ function update(){
   prs.clear();
 }
 function handleScreen(){
-  const ui=readUI(),act=ui.act,back=ui.back;
-  if(scr==='title'){if(act||pressed('Enter')||pressed('Space')){go('select');sel='p0';}}
+  const ui=readUI(scr!=='work'),act=ui.act,back=ui.back;
+  if(scr==='title'){if(act||ui.tap||pressed('Enter')||pressed('Space')){go('select');sel='p0';}}
   else if(scr==='select'){
     if(act&&act[0]==='p'){S=makeState(+act[1]);tipI=0;go('hub');sel='train';}
     if(act==='cus'){go('custom');sel='go';}
@@ -814,7 +851,7 @@ function handleScreen(){
     if(pressed('KeyU')){S.allUnlocked=true;say('TODAS AS TÉCNICAS LIBERADAS',C.acc2);}
   }
   else if(scr==='tsetup'){tsetupAct(act,back);}
-  else if(scr==='work'){}
+  else if(scr==='work'){if(act==='endset'&&WK)finishSet('RACK');}
   else if(scr==='result'){
     if(act==='again'){TS={step:0,ex:null,pct:.55,tech:'norm',ex2:undefined};go('tsetup');sel='e0';}
     if(act==='hub'||back){go('hub');sel='train';}
@@ -843,6 +880,7 @@ function handleScreen(){
 }
 function tsetupAct(act,back){
   const t=TS;
+  if(act==='unl'){S.allUnlocked=true;say('TODAS AS TÉCNICAS LIBERADAS',C.acc2);return;}
   if(back){if(t.step===0){go('hub');sel='train';}else{t.step--;if(t.step===0)sel='e'+t.ex;else if(t.step===1)sel='l1';else sel='t0';}return;}
   if(!act)return;
   if(t.step===0&&act[0]==='e'){t.ex=+act.slice(1);t.step=1;sel='l1';}
@@ -871,17 +909,18 @@ function render(){
   else if(scr==='sleep')rSleep();
   else if(scr==='night')rNight();
   else if(scr==='body')rBody();
+  if(['select','custom','tsetup','nutri','sleep','body','result'].includes(scr))button('__back',W-48,2,46,12,'VOLTAR');
   if(toast){const a=Math.min(1,toast.life/20);ctx.globalAlpha=a;box(W/2-150,4,300,16,'#101430',C.acc);T(toast.t,W/2,9,toast.c,'c');ctx.globalAlpha=1;}
 }
 let TITLE_ST=null;
 function rTitle(){
   drawGym(false);
   if(!TITLE_ST)TITLE_ST=[0,1,2,3].map(i=>makeState(i));
-  figFront(44,204,.88,TITLE_ST[1],{expr:3});figFront(104,204,.92,TITLE_ST[2],{expr:3});figFront(280,204,.9,TITLE_ST[0],{expr:3});figFront(340,204,.88,TITLE_ST[3],{expr:3});
+  figFront(34,206,.86,TITLE_ST[1],{expr:3});figFront(88,206,.9,TITLE_ST[2],{expr:3});figFront(296,206,.9,TITLE_ST[0],{expr:3});figFront(350,206,.86,TITLE_ST[3],{expr:3});
   const b=Math.sin(tick*.05)*2;
   T('CORPO',W/2,22+b,C.acc,'c',4);T('EM OBRA',W/2,56+b,C.acc2,'c',4);
   T('TREINE. COMA. DURMA. EVOLUA.',W/2,100,C.txt,'c');
-  if((tick>>5)&1)T('APERTE ENTER OU CLIQUE PARA COMEÇAR',W/2,118,C.acc,'c');
+  if((tick>>5)&1)T(TOUCH?'TOQUE NA TELA PARA COMEÇAR':'APERTE ENTER OU CLIQUE PARA COMEÇAR',W/2,118,C.acc,'c');
   T('JOGO EDUCATIVO: NÃO SUBSTITUI ORIENTAÇÃO PROFISSIONAL DE SAÚDE',W/2,204,C.out,'c',1,false);
 }
 function rSelect(){
@@ -1001,6 +1040,7 @@ function rTsetup(){
     T('ESTÍMULO X'+STIM[tc.id].toFixed(2),220,120,C.acc2);
     T('DOR NO DIA SEGUINTE X'+DMGM[tc.id].toFixed(1),220,131,C.org);
     TL(techOpen(tc)?'':'SOBE DE NÍVEL TREINANDO PARA LIBERAR.',220,148,25,C.red,9);
+    if(!S.allUnlocked)button('unl',220,178,150,22,'LIBERAR TUDO (DEMO)');
   }else{
     const first=EX[t.ex],bi=t.tech==='bi';
     panel(8,20,200,186,bi?'MESMO MÚSCULO':'MÚSCULO OPOSTO');
@@ -1057,7 +1097,8 @@ function rWork(){
   if(w.stage===2)T('2º EXERCÍCIO',256,190,C.blu);
   else if(w.tech==='drop')T('DROPS '+w.drops+'/2',256,190,C.blu);
   else if(w.tech==='rp')T('PAUSAS '+w.pauses+'/2',256,190,C.blu);
-  T('SEGURE ESPAÇO/MOUSE = SUBIR  SOLTE = DESCER  ENTER = ENCERRAR',8,206,C.dim);
+  button('endset',4,200,58,13,'ENCERRAR');
+  T(TOUCH?'SEGURE A TELA = SUBIR   SOLTE = DESCER':'SEGURE ESPAÇO/MOUSE = SUBIR  SOLTE = DESCER  ENTER = ENCERRAR',68,203,C.dim);
   // avisos
   if(w.state==='ready')T('PREPARE-SE',120,20,C.acc,'c',2);
   if(w.state==='failed')T('FALHA!',120,16,C.red,'c',3);
@@ -1199,5 +1240,21 @@ window.__gym={get S(){return S;},get scr(){return scr;},get WK(){return WK;},get
 requestAnimationFrame(frame);
 })();
 </script>
+<script>
+(()=>{
+  const coarse=window.matchMedia&&matchMedia('(pointer:coarse)').matches,hint=document.getElementById('hint'),fs=document.getElementById('fs');
+  if(coarse&&hint)hint.innerHTML='<b>Toque</b> nos botões. No treino, <b>segure a tela</b> para subir a carga e solte para descer.';
+  const el=document.documentElement,full=()=>document.fullscreenElement||document.webkitFullscreenElement;
+  fs.addEventListener('click',()=>{
+    try{
+      if(full()){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return;}
+      const r=(el.requestFullscreen||el.webkitRequestFullscreen).call(el);
+      Promise.resolve(r).then(()=>{try{screen.orientation.lock('landscape').catch(()=>{});}catch(e){}}).catch(()=>{});
+    }catch(e){}
+  });
+  document.addEventListener('fullscreenchange',()=>{fs.textContent=full()?'Sair da tela cheia':'Tela cheia';});
+})();
+</script>
+<!--PAGE-END-->
 </body>
 </html>
