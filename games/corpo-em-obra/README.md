@@ -91,6 +91,8 @@ No hub há o botão **FICHA**. Nela você monta a semana: escolhe o dia, **adici
 
 **PROJETAR** simula de 4 a 24 semanas com o mesmo modelo do jogo (dieta e sono atuais): gráfico de peso, músculo, gordura e fadiga, o corpo antes e depois, o saldo calórico médio, os deloads automáticos e, por músculo, a massa ganha e a força inicial e final. As técnicas contam séries extras e somam fadiga, como no treino real. É uma estimativa simplificada, não prescrição.
 
+**Escrever a ficha:** o botão **ESCREVER** abre um campo de texto já preenchido com a sua ficha atual. Você pode editar ou escrever do zero, um dia por bloco (`Segunda:` e, embaixo, `supino 4x10`). O jogo entende nomes comuns (supino, remada, puxada, agachamento, leg press, afundo, rosca, tríceps corda...), `bi-set`, `super-set`, `drop set` e `rest-pause` (a técnica vale com a linha de baixo no bi-set e no super-set) e a junção com `+` (`supino 4x10 + remada 4x10`). As repetições definem a carga: até 6 viram 85%, até 10 viram 70% e acima disso 55%. Exercício que não está no catálogo é criado se você escrever o músculo entre parênteses (`panturrilha em pé (pernas) 4x15`). O que o jogo não entendeu aparece num aviso.
+
 Os exercícios novos também aparecem na escolha do treino (botão "MAIS EXERCÍCIOS") e usam as mesmas animações de execução dos exercícios básicos.
 
 ## Ciência do treino (baseada nos materiais de referência)

@@ -130,6 +130,7 @@ function bar(x,y,w,h,v,col,bg){R(x,y,w,h,C.out);R(x+1,y+1,w-2,h-2,bg||'#16246a')
 const keys={},prs=new Set();
 const mouse={x:0,y:0,down:false,click:false,moved:false};
 addEventListener('keydown',e=>{
+  if(e.target&&e.target.tagName==='TEXTAREA')return;
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault();
   if(!keys[e.code]||(e.repeat&&(scr==='custom'||scr==='nutri')&&(e.code==='Enter'||e.code==='Space')))prs.add(e.code);keys[e.code]=true;initAudio();
 });
@@ -991,6 +992,7 @@ function handleScreen(){
       else if(m=/^fp(\d)$/.exec(act)){const it=l[+m[1]];if(it)it.n=Math.min(6,it.n+1);}
       else if(m=/^fc(\d)$/.exec(act)){const it=l[+m[1]];if(it)it.p=(it.p+1)%4;}
       else if(m=/^ft(\d)$/.exec(act)){const j=+m[1],it=l[j];if(it){let k=TECHS.indexOf(it.t);do{k=(k+1)%TECHS.length;}while((TECHS[k]==='bi'||TECHS[k]==='super')&&j+1>=l.length);it.t=TECHS[k];fixPairs(l);}}
+      else if(act==='ftxt'){openFichaText();return;}
       else if(act==='fadd'){PK=0;go('fpick');sel='mt0';return;}
       else if(m=/^pr(\d)$/.exec(act)){fx.days=fdays(['ini','ab','av','comb','none'][+m[1]]);}
       else if(act==='fw'){fx.weeks=fx.weeks>=24?4:fx.weeks===4?8:fx.weeks===8?12:24;}
@@ -1405,6 +1407,81 @@ function projectFicha(weeks){
   }finally{S=sv.S;scr=sv.scr;NIGHT=sv.NIGHT;tipI=sv.tipI;sel=sv.sel;tick=sv.tick;toast=sv.toast;SND.zzz=sv.z;}
 }
 function zoneShort(i,n){const L=landm(S,i);return n<=0?{t:'-',c:C.dim}:n<L[1]?{t:'BAIXO',c:C.blu}:n<=L[2]?{t:'ÓTIMO',c:C.grn}:n<=L[3]?{t:'ALTO',c:C.org}:{t:'EXCESSO',c:C.red};}
+// ---------- escrever a ficha em texto ----------
+const nrm=t=>t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const DAYRX=/^\s*(segunda|seg|terca|ter|quarta|qua|quinta|qui|sexta|sex|sabado|sab|domingo|dom)(-feira)?\s*[:\-–]\s*(.*)$/;
+const DAYIDX={seg:0,ter:1,qua:2,qui:3,sex:4,sab:5,dom:6};
+const ALIAS=[[/supino.*inclin/,7],[/supino|bench/,0],[/crucifixo|\bfly\b|peck|crossover/,8],[/puxada|pulldown|pull down|barra fixa|pulley frente/,9],[/remada.*(baixa|sentada)/,10],[/remada/,1],[/desenvolvimento|militar/,2],[/elevacao lateral/,11],[/martelo/,12],[/rosca|biceps|scott/,3],[/triceps.*(pulley|corda|polia)|pulley|corda/,13],[/triceps|frances|testa/,4],[/leg ?press/,14],[/extensora/,15],[/afundo|avanco|passada|bulgaro/,16],[/agacha|squat|hack/,5],[/infra/,17],[/abdominal|abdomen|prancha|crunch/,6]];
+const MKEY=[[/peito|peitoral/,0],[/costas|dorsal/,1],[/ombro|deltoide/,2],[/biceps/,3],[/triceps/,4],[/perna|coxa|quadriceps|gluteo|posterior|panturrilha|femoral/,5],[/abdomen|abdominal|core/,6]];
+const MPOSE=['bench','row','press','curl','tri','squat','crunch'],MCOEF=[12,8,9,10,9,10,6];
+function parseItem(raw){
+  const t=raw.trim();if(!t)return null;const low=nrm(t);let tech='norm';
+  if(/bi-?set|biset/.test(low))tech='bi';else if(/super-?set|superserie|super serie/.test(low))tech='super';else if(/drop/.test(low))tech='drop';else if(/rest-?pause|\brp\b/.test(low))tech='rp';
+  let n=3,reps=10;const m=/(\d+)\s*[x×*]\s*(\d+)/.exec(low);
+  if(m){n=+m[1];reps=+m[2];}else{const m2=/(\d+)\s*series?/.exec(low);if(m2)n=+m2[1];}
+  const pm=/\(([^)]*)\)/.exec(low);
+  const name=low.replace(/\([^)]*\)/g,' ').replace(/(\d+)\s*[x×*]\s*(\d+)/g,' ').replace(/bi-?set|biset|super-?set|superserie|super serie|drop( ?set)?|rest-?pause|\brp\b|\d+\s*series?/g,' ').replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim();
+  return{raw:t,name,n:clamp(n,1,6),p:reps<=6?3:reps<=10?2:1,tech,hint:pm?pm[1]:''};
+}
+function resolveEx(it,notes){
+  for(const [rx,idx] of ALIAS)if(rx.test(it.name))return idx;
+  const ex=EX.findIndex(e=>nrm(e.n)===it.name);if(ex>=0)return ex;
+  let m=-1;for(const [rx,k] of MKEY)if(rx.test(it.hint+' '+it.name)){m=k;break;}
+  if(m<0||!it.name){notes.push('NÃO ENTENDI "'+it.raw.slice(0,24).toUpperCase()+'". ESCREVA O MÚSCULO ENTRE PARÊNTESES.');return -1;}
+  EX.push({n:it.name.toUpperCase().slice(0,22),m,sec:[],coef:MCOEF[m],pose:MPOSE[m],custom:true});
+  notes.push('CRIEI "'+EX[EX.length-1].n+'" ('+MUSC[m]+').');return EX.length-1;
+}
+function parseFicha(text){
+  const days=[[],[],[],[],[],[],[]],notes=[];let cur=-1,seen=0;
+  const add=(raw)=>{
+    if(cur<0)return;
+    const parts=raw.split('+').map(parseItem).filter(Boolean);if(!parts.length)return;
+    const ids=parts.map(p=>resolveEx(p,notes));
+    parts.forEach((p,k)=>{
+      if(ids[k]<0)return;
+      const e={i:ids[k],n:p.n,p:p.p,t:p.tech};
+      if(k===0&&parts.length>1&&ids[1]>=0&&p.tech!=='bi'&&p.tech!=='super')e.t=EX[ids[0]].m===EX[ids[1]].m?'bi':'super';
+      if(days[cur].length>=7){if(!notes.includes('MÁXIMO 7 EXERCÍCIOS POR DIA.'))notes.push('MÁXIMO 7 EXERCÍCIOS POR DIA.');return;}
+      days[cur].push(e);
+    });
+  };
+  for(const line of text.split(/\n/)){
+    const nl=nrm(line).trim();if(!nl)continue;
+    const dm=DAYRX.exec(nl);
+    if(dm){cur=DAYIDX[dm[1].slice(0,3)];seen++;const rest=line.slice(line.search(/[:\-–]/)+1);rest.split(/[,;]/).forEach(add);}
+    else if(cur<0){cur=0;seen++;notes.push('SEM DIA NO COMEÇO: USEI SEGUNDA.');line.split(/[,;]/).forEach(add);}
+    else line.split(/[,;]/).forEach(add);
+  }
+  days.forEach(fixPairs);
+  return{days,notes,seen};
+}
+const DAYFULL=['SEGUNDA','TERÇA','QUARTA','QUINTA','SEXTA','SÁBADO','DOMINGO'],TECHTXT={norm:'',drop:' drop set',rp:' rest-pause',bi:' bi-set',super:' super-set'};
+function fichaToText(){
+  return S.fx.days.map((l,d)=>l.length?DAYFULL[d]+':\n'+l.map(it=>EX[it.i].n.toLowerCase()+' '+it.n+'x'+[15,12,10,6][it.p]+TECHTXT[it.t]).join('\n'):'').filter(Boolean).join('\n\n');
+}
+let FOV=null;
+function openFichaText(){
+  if(FOV){FOV.style.display='flex';FOV.querySelector('textarea').value=fichaToText();FOV.querySelector('.fmsg').textContent='';return;}
+  const o=document.createElement('div');
+  o.style.cssText='position:fixed;inset:0;z-index:20;background:rgba(5,7,20,.88);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font:14px/1.4 system-ui,sans-serif;color:#e9ebff';
+  o.innerHTML='<div style="width:min(560px,100%);max-height:100%;overflow:auto;background:#161a3a;border:1px solid #6a74b8;border-radius:8px;padding:14px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px">'
+   +'<b style="color:#ffcf3f;font-size:16px">Escreva a sua ficha</b>'
+   +'<div style="color:#b8bfe8;font-size:13px">Um dia por bloco: <i>Segunda:</i> e, nas linhas de baixo, os exercícios com <i>séries x repetições</i>. Palavras que o jogo entende: <b>bi-set</b>, <b>super-set</b>, <b>drop set</b>, <b>rest-pause</b> (a técnica da linha vale com a linha de baixo, no bi-set e super-set). Você também pode juntar com <b>+</b>, como <i>supino 4x10 + remada 4x10</i>. Exercício que não existe no jogo é criado se você puser o músculo entre parênteses, como <i>rosca inversa (bíceps) 3x12</i>.</div>'
+   +'<textarea spellcheck="false" style="width:100%;height:240px;box-sizing:border-box;background:#0b0d17;color:#e9ebff;border:1px solid #6a74b8;border-radius:6px;padding:8px;font:16px/1.4 ui-monospace,monospace;resize:vertical"></textarea>'
+   +'<div class="fmsg" style="color:#5af0c8;font-size:13px;min-height:18px"></div>'
+   +'<div style="display:flex;gap:8px;justify-content:flex-end"><button class="fclose" style="font:600 14px system-ui;padding:8px 14px;border-radius:6px;border:1px solid #6a74b8;background:#2a2f55;color:#e9ebff">Fechar</button><button class="fapply" style="font:600 14px system-ui;padding:8px 14px;border-radius:6px;border:1px solid #ffcf3f;background:#ffcf3f;color:#10122a">Aplicar na ficha</button></div></div>';
+  document.body.appendChild(o);FOV=o;
+  const ta=o.querySelector('textarea');ta.value=fichaToText();
+  o.querySelector('.fclose').onclick=()=>{o.style.display='none';cv.focus();};
+  o.querySelector('.fapply').onclick=()=>{
+    const r=parseFicha(ta.value),msg=o.querySelector('.fmsg');
+    const tot=r.days.reduce((a,l)=>a+l.length,0);
+    if(!tot){msg.style.color='#ff6a7a';msg.textContent='Não entendi nenhum exercício. Exemplo: "Segunda:" e embaixo "supino 4x10".'+(r.notes.length?' '+r.notes.join(' '):'');return;}
+    S.fx.days=r.days;FD=Math.max(0,r.days.findIndex(l=>l.length));
+    msg.style.color=r.notes.length?'#ffa850':'#5af0c8';
+    msg.textContent='Ficha aplicada: '+tot+' exercícios em '+r.days.filter(l=>l.length).length+' dias.'+(r.notes.length?' Avisos: '+r.notes.join(' ').toLowerCase():'');
+  };
+}
 function rFicha(){
   drawGym(true);R(0,0,W,H,'rgba(0,0,0,.55)');
   const fx=S.fx,l=fx.days[FD];panel(4,16,376,196,'FICHA DE TREINO: MONTE A SEMANA');
@@ -1416,7 +1493,7 @@ function rFicha(){
     button('fc'+j,198,y,28,17,Math.round(FZ[it.p]*100)+'%');
     button('ft'+j,230,y,46,17,pa?'PAR':TLB[it.t],{dis:pa});});
   if(!l.length)T('DIA DE DESCANSO. ADICIONE UM EXERCÍCIO.',66,60,C.dim);
-  button('fadd',66,184,130,14,'+ ADICIONAR EXERCÍCIO',{dis:l.length>=7});
+  button('fadd',66,184,130,14,'+ ADICIONAR EXERCÍCIO',{dis:l.length>=7});button('ftxt',200,184,76,14,'ESCREVER');
   T('BI: MESMO MÚSCULO. SUPER: OPOSTOS.',66,203,C.dim);
   [['INICIANTE 3X','pr0'],['A/B 4X','pr1'],['AVANÇADO 5X','pr2'],['COMBINADO','pr3'],['LIMPAR','pr4']].forEach((a,k)=>button(a[1],280,28+k*15,96,13,a[0]));
   button('fgo',280,106,96,18,'PROJETAR');button('fw',280,126,96,13,'PERÍODO: '+fx.weeks+' SEM');
@@ -1580,7 +1657,7 @@ function frame(now){
 }
 window.__gym={get S(){return S;},get scr(){return scr;},get WK(){return WK;},get NIGHT(){return NIGHT;},get RES(){return RES;},get TS(){return TS;},
   step(n=1){for(let i=0;i<n;i++)update();},render,go,setHold(v){testHold=v;},makeState,endDay,startWorkout,sel:()=>sel,
-  setS(s){S=s;},get MOB(){return MOB;},projectFicha,get PROJ(){return PROJ;},fdays,planSets,mobF,landm,wk7,restPct,bmr:()=>bmr(S),weight:()=>weight(S),bf:()=>bf(S)};
+  setS(s){S=s;},get MOB(){return MOB;},parseFicha,fichaToText,projectFicha,get PROJ(){return PROJ;},fdays,planSets,mobF,landm,wk7,restPct,bmr:()=>bmr(S),weight:()=>weight(S),bf:()=>bf(S)};
 requestAnimationFrame(frame);
 })();
 </script>
