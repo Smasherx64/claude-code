@@ -87,7 +87,11 @@ Valores de referência usados (conferidos em literatura):
 
 ## Ficha de treino e projeção
 
-No hub há o botão **FICHA**. Nela você monta a semana: escolhe o dia, as séries (0 a 6) de cada exercício e a carga (40, 55, 70 ou 85% da força). Há modelos prontos (iniciante 3x, A/B 4x, avançado 5x) e a tela mostra as séries por semana de cada músculo contra as zonas de volume (baixo, ótimo, alto, excesso). **PROJETAR** simula de 4 a 24 semanas com o mesmo modelo do jogo (dieta e sono atuais) e mostra o gráfico de peso, músculo, gordura e fadiga, o corpo antes e depois, o saldo calórico médio, os deloads automáticos e, por músculo, a massa ganha e a força inicial e final. É uma estimativa simplificada, não prescrição.
+No hub há o botão **FICHA**. Nela você monta a semana: escolhe o dia, **adiciona os exercícios** de um catálogo de 18 (por músculo), ajusta as séries (1 a 6), a carga (40, 55, 70 ou 85% da força) e a **técnica** de cada um: normal, drop set, rest-pause, **bi-set** (com o exercício seguinte, mesmo músculo) ou **super-set** (com o seguinte, músculo oposto). O exercício que entra em par aparece como "PAR". Há modelos prontos (iniciante 3x, A/B 4x, avançado 5x e um **combinado** com bi-sets e super-sets). A tela mostra as séries por semana de cada músculo contra as zonas de volume (baixo, ótimo, alto, excesso).
+
+**PROJETAR** simula de 4 a 24 semanas com o mesmo modelo do jogo (dieta e sono atuais): gráfico de peso, músculo, gordura e fadiga, o corpo antes e depois, o saldo calórico médio, os deloads automáticos e, por músculo, a massa ganha e a força inicial e final. As técnicas contam séries extras e somam fadiga, como no treino real. É uma estimativa simplificada, não prescrição.
+
+Os exercícios novos também aparecem na escolha do treino (botão "MAIS EXERCÍCIOS") e usam as mesmas animações de execução dos exercícios básicos.
 
 ## Ciência do treino (baseada nos materiais de referência)
 
